@@ -26,10 +26,15 @@ namespace Compat
             {
                 AssemblyResolver = customResolver
             });
+            string[] assemblyNames = (customResolver as CustomAssemblyResolver).AssemblyNames;
+
+            // print assembly name and reference assembly names
+            Console.WriteLine("{0}\n", module.Assembly.FullName);
             foreach (AssemblyNameReference reference in module.AssemblyReferences)
             {
                 Console.WriteLine(reference.FullName);
             }
+            Console.WriteLine("");
 
             // iterate over all the types
             foreach (TypeDefinition type in module.Types)
@@ -60,6 +65,12 @@ namespace Compat
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
                         if (scope != null)
                         {
+                            // skip if scope is not in the list of reference assemblies loaded
+                            if (!assemblyNames.Any(a => a == scope.Name))
+                            {
+                                Console.WriteLine("RESULT\tSkip ({0} is not in the list)", scope.Name);
+                                continue;
+                            }
                             // try to resolve operand
                             bool success = TryResolve(instruction.Operand);
                             if (success)
@@ -128,6 +139,7 @@ namespace Compat
         {
             try
             {
+                // TODO: why am I casting again??
                 var fref = operand as FieldReference;
                 if (fref != null)
                 {
@@ -149,6 +161,9 @@ namespace Compat
             }
             catch (AssemblyResolutionException e)
             {
+                // TODO: instead of rethrowing, keep track of fields/methods/classes
+                // that couldn't be resolved and, at the end, exit with an error
+                // code and display useful information
                 throw e;
                 //return false;
             }
@@ -160,19 +175,30 @@ namespace Compat
         /// </summary>
         class CustomAssemblyResolver : DefaultAssemblyResolver
         {
+            private List<string> _names;
+            
+            /// <summary>
+            /// Creates a Custom Assembly Resolver and preload the cache with some reference assemblies.
+            /// </summary>
+            /// <param name="paths">A bunch of reference assemblies.</param>
             public CustomAssemblyResolver(IEnumerable<string> paths)
                 : base()
             {
+                this._names = new List<string>();
                 foreach (string path in paths)
                 {
                     var assembly = AssemblyDefinition.ReadAssembly(path);
                     this.RegisterAssembly(assembly);
+                    this._names.Add(assembly.Name.Name); // store names for lookup later
                 }
             }
 
-            new public void RegisterAssembly (AssemblyDefinition assembly)
+            /// <summary>
+            /// Gets names of assemblies loaded into resolver cache. This array is a copy.
+            /// </summary>
+            public string[] AssemblyNames
             {
-                base.RegisterAssembly(assembly);
+                get { return _names.ToArray(); } // copied so I can't mess things up
             }
         }
     }

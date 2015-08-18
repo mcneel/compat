@@ -9,11 +9,11 @@ namespace Compat
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             if (args.Length < 1)
             {
-                return;
+                return 100; // not enough arguments?
             }
             string fileName = args[0];
             
@@ -28,13 +28,24 @@ namespace Compat
             });
             string[] assemblyNames = (customResolver as CustomAssemblyResolver).AssemblyNames;
 
-            // print assembly name and reference assembly names
+            // print assembly name, cached assembly names and reference assembly names
             Console.WriteLine("{0}\n", module.Assembly.FullName);
+            if (args.Length > 1)
+            {
+                foreach (var assembly in args.Skip(1))
+                {
+                    Console.WriteLine(AssemblyDefinition.ReadAssembly(assembly).FullName);
+                }
+                Console.WriteLine("");
+            }
             foreach (AssemblyNameReference reference in module.AssemblyReferences)
             {
                 Console.WriteLine(reference.FullName);
             }
             Console.WriteLine("");
+
+            // global failure tracker
+            bool failure = false;
 
             // iterate over all the types
             foreach (TypeDefinition type in module.Types)
@@ -76,13 +87,22 @@ namespace Compat
                             if (success)
                                 Console.ForegroundColor = ConsoleColor.Green;
                             else
+                            {
                                 Console.ForegroundColor = ConsoleColor.Red;
+                                failure = true;
+                            }
                             Console.WriteLine("RESULT\t{0}", success);
                             Console.ResetColor();
                         }
                     }
                 }
             }
+
+            // exit code
+            if (failure)
+                return 1;
+            else
+                return 0;
         }
 
         /// <summary>
@@ -164,8 +184,8 @@ namespace Compat
                 // TODO: instead of rethrowing, keep track of fields/methods/classes
                 // that couldn't be resolved and, at the end, exit with an error
                 // code and display useful information
-                throw e;
-                //return false;
+                //throw e;
+                return false;
             }
             return false;
         }

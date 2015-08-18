@@ -11,13 +11,21 @@ namespace Compat
     {
         static void Main(string[] args)
         {
-            // load the module
             if (args.Length < 1)
             {
                 return;
             }
             string fileName = args[0];
-            ModuleDefinition module = ModuleDefinition.ReadModule(fileName);
+            
+            // instantiate custom assembly resolver that loads reference assemblies
+            IAssemblyResolver customResolver = new CustomAssemblyResolver(args.Skip(1));
+
+            // load the plugin module
+            // TODO: perhaps we should load the plugin assembly then iterate through all modules
+            ModuleDefinition module = ModuleDefinition.ReadModule(fileName, new ReaderParameters
+            {
+                AssemblyResolver = customResolver
+            });
             foreach (AssemblyNameReference reference in module.AssemblyReferences)
             {
                 Console.WriteLine(reference.FullName);
@@ -52,7 +60,14 @@ namespace Compat
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
                         if (scope != null)
                         {
-                            // TODO: do something
+                            // try to resolve operand
+                            bool success = TryResolve(instruction.Operand);
+                            if (success)
+                                Console.ForegroundColor = ConsoleColor.Green;
+                            else
+                                Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("RESULT\t{0}", success);
+                            Console.ResetColor();
                         }
                     }
                 }
@@ -102,6 +117,63 @@ namespace Compat
             }
 
             return scope;
+        }
+
+        /// <summary>
+        /// Try to resolve an operand if it is either a field, a method or a class.
+        /// </summary>
+        /// <param name="operand">The operand in question.</param>
+        /// <returns>True if successful.</returns>
+        static bool TryResolve(object operand)
+        {
+            try
+            {
+                var fref = operand as FieldReference;
+                if (fref != null)
+                {
+                    fref.Resolve();
+                    return true;
+                }
+                var mref = operand as MethodReference;
+                if (mref != null)
+                {
+                    mref.Resolve();
+                    return true;
+                }
+                var tref = operand as TypeReference;
+                if (tref != null)
+                {
+                    tref.Resolve();
+                    return true;
+                }
+            }
+            catch (AssemblyResolutionException e)
+            {
+                throw e;
+                //return false;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Custom assembly resolver to load specified reference assemblies into the cache.
+        /// </summary>
+        class CustomAssemblyResolver : DefaultAssemblyResolver
+        {
+            public CustomAssemblyResolver(IEnumerable<string> paths)
+                : base()
+            {
+                foreach (string path in paths)
+                {
+                    var assembly = AssemblyDefinition.ReadAssembly(path);
+                    this.RegisterAssembly(assembly);
+                }
+            }
+
+            new public void RegisterAssembly (AssemblyDefinition assembly)
+            {
+                base.RegisterAssembly(assembly);
+            }
         }
     }
 }

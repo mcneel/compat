@@ -11,22 +11,28 @@ namespace Compat
     {
         static int Main(string[] args)
         {
+            // first arg is the path to the main assembly being processed
             if (args.Length < 1)
             {
                 return 100; // not enough arguments?
             }
             string fileName = args[0];
-            
-            // instantiate custom assembly resolver that loads reference assemblies
+
+            // second arg and onwards should be paths to reference assemblies
+            // instantiate custom assembly resolver that loads reference assemblies into cache
             IAssemblyResolver customResolver = new CustomAssemblyResolver(args.Skip(1));
 
-            // load the plugin module
+            // load the plugin module (with the custom assembly resolver)
             // TODO: perhaps we should load the plugin assembly then iterate through all modules
             ModuleDefinition module = ModuleDefinition.ReadModule(fileName, new ReaderParameters
             {
                 AssemblyResolver = customResolver
             });
-            string[] assemblyNames = (customResolver as CustomAssemblyResolver).AssemblyNames;
+
+            // extract cached reference assemblies from custom assembly resolver
+            // we'll query these later to make sure we only attempt to resolve a reference when the
+            // definition is defined in an assembly in this list
+            AssemblyDefinition[] cache = (customResolver as CustomAssemblyResolver).Assemblies;
 
             // print assembly name, cached assembly names and reference assembly names
             Console.WriteLine("{0}\n", module.Assembly.FullName);
@@ -47,23 +53,23 @@ namespace Compat
             // global failure tracker
             bool failure = false;
 
-            // iterate over all the types
+            // iterate over all the TYPES
             foreach (TypeDefinition type in module.Types)
             {
                 Console.ForegroundColor = ConsoleColor.Magenta;
                 Console.WriteLine("CLASS\t{0}", type.FullName);
                 Console.ResetColor();
 
-                // iterate over all the methods that have a method body
+                // iterate over all the METHODS that have a method body
                 foreach (MethodDefinition method in type.Methods)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("METHOD\t{0}", method.FullName);
                     Console.ResetColor();
-                    if (!method.HasBody)
+                    if (!method.HasBody) // skip if no body
                         continue;
                     
-                    // iterate over all the instructions
+                    // iterate over all the INSTRUCTIONS
                     foreach (var instruction in method.Body.Instructions)
                     {
                         Console.WriteLine(
@@ -72,26 +78,30 @@ namespace Compat
                             instruction.OpCode.Code,
                             instruction.Operand == null ? "<null>" : string.Format("{0} / {1}", instruction.Operand.GetType().FullName, instruction.Operand.ToString()));
 
-                        // get the scope
+                        // get the scope (the name of the assembly in which the operand is defined)
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
                         if (scope != null)
                         {
-                            // skip if scope is not in the list of reference assemblies loaded
-                            if (!assemblyNames.Any(a => a == scope.Name))
+                            // skip if scope is not in the list of cached reference assemblies
+                            if (!cache.Any(a => a.Name.Name == scope.Name))
                             {
                                 Console.WriteLine("RESULT\tSkip ({0} is not in the list)", scope.Name);
                                 continue;
                             }
                             // try to resolve operand
+                            // this is the big question - does the field/method/class exist in one of
+                            // the cached reference assemblies
                             bool success = TryResolve(instruction.Operand);
                             if (success)
+                                // TODO: print nothing (unless debug)
                                 Console.ForegroundColor = ConsoleColor.Green;
                             else
                             {
+                                // TODO: print information about field/method/class that couldn't be resolved
                                 Console.ForegroundColor = ConsoleColor.Red;
-                                failure = true;
+                                failure = true; // set global failure (non-zero exit code)
                             }
-                            Console.WriteLine("RESULT\t{0}", success);
+                            Console.WriteLine("RESULT\t{0}", success); // print resolution status
                             Console.ResetColor();
                         }
                     }
@@ -113,6 +123,8 @@ namespace Compat
         static IMetadataScope GetOperandScope(object operand)
         {
             IMetadataScope scope = null;
+
+            // try to cast operand to either field, method or class
             var mref = operand as MethodReference;
             if (mref != null)
             {
@@ -159,7 +171,7 @@ namespace Compat
         {
             try
             {
-                // TODO: why am I casting again??
+                // TODO: why am I casting again?? merge with GetOperandScope perhaps?
                 var fref = operand as FieldReference;
                 if (fref != null)
                 {
@@ -179,23 +191,20 @@ namespace Compat
                     return true;
                 }
             }
-            catch (AssemblyResolutionException e)
+            catch (AssemblyResolutionException)
             {
-                // TODO: instead of rethrowing, keep track of fields/methods/classes
-                // that couldn't be resolved and, at the end, exit with an error
-                // code and display useful information
-                //throw e;
                 return false;
             }
-            return false;
+            return false; // just in case
         }
 
+        // TODO: investigate http://stackoverflow.com/a/18080305
         /// <summary>
         /// Custom assembly resolver to load specified reference assemblies into the cache.
         /// </summary>
         class CustomAssemblyResolver : DefaultAssemblyResolver
         {
-            private List<string> _names;
+            private List<AssemblyDefinition> _cache; // store cached reference assemblies
             
             /// <summary>
             /// Creates a Custom Assembly Resolver and preload the cache with some reference assemblies.
@@ -204,21 +213,21 @@ namespace Compat
             public CustomAssemblyResolver(IEnumerable<string> paths)
                 : base()
             {
-                this._names = new List<string>();
+                this._cache = new List<AssemblyDefinition>();
                 foreach (string path in paths)
                 {
                     var assembly = AssemblyDefinition.ReadAssembly(path);
                     this.RegisterAssembly(assembly);
-                    this._names.Add(assembly.Name.Name); // store names for lookup later
+                    this._cache.Add(assembly); // store assemblies for lookup later
                 }
             }
 
             /// <summary>
             /// Gets names of assemblies loaded into resolver cache. This array is a copy.
             /// </summary>
-            public string[] AssemblyNames
+            public AssemblyDefinition[] Assemblies
             {
-                get { return _names.ToArray(); } // copied so I can't mess things up
+                get { return _cache.ToArray(); } // copied so things can't get messed up
             }
         }
     }

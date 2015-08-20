@@ -20,7 +20,8 @@ namespace Compat
 
             // second arg and onwards should be paths to reference assemblies
             // instantiate custom assembly resolver that loads reference assemblies into cache
-            IAssemblyResolver customResolver = new CustomAssemblyResolver(args.Skip(1));
+            // note: ONLY these assemblies will be available to the resolver
+            var customResolver = new CustomAssemblyResolver(args.Skip(1));
 
             // load the plugin module (with the custom assembly resolver)
             // TODO: perhaps we should load the plugin assembly then iterate through all modules
@@ -32,7 +33,7 @@ namespace Compat
             // extract cached reference assemblies from custom assembly resolver
             // we'll query these later to make sure we only attempt to resolve a reference when the
             // definition is defined in an assembly in this list
-            AssemblyDefinition[] cache = (customResolver as CustomAssemblyResolver).Assemblies;
+            IDictionary<string, AssemblyDefinition> cache = customResolver.Cache;
 
             // print assembly name, cached assembly names and reference assembly names
             Console.WriteLine("{0}\n", module.Assembly.FullName);
@@ -83,7 +84,7 @@ namespace Compat
                         if (scope != null)
                         {
                             // skip if scope is not in the list of cached reference assemblies
-                            if (!cache.Any(a => a.Name.Name == scope.Name))
+                            if (!cache.ContainsKey(scope.Name))
                             {
                                 Console.WriteLine("RESULT\tSkip ({0} is not in the list)", scope.Name);
                                 continue;
@@ -93,7 +94,7 @@ namespace Compat
                             // the cached reference assemblies
                             bool success = TryResolve(instruction.Operand);
                             if (success)
-                                // TODO: print nothing (unless debug)
+                                // TODO: print nothing (unless DEBUG)
                                 Console.ForegroundColor = ConsoleColor.Green;
                             else
                             {
@@ -172,6 +173,7 @@ namespace Compat
             try
             {
                 // TODO: why am I casting again?? merge with GetOperandScope perhaps?
+                // UPDATE: I tried but it's not as straightforward as first thought!
                 var fref = operand as FieldReference;
                 if (fref != null)
                 {
@@ -198,36 +200,66 @@ namespace Compat
             return false; // just in case
         }
 
-        // TODO: investigate http://stackoverflow.com/a/18080305
         /// <summary>
         /// Custom assembly resolver to load specified reference assemblies into the cache.
+        /// Imitates DefaultAssemblyResolver except or the version agnostic cache.
         /// </summary>
-        class CustomAssemblyResolver : DefaultAssemblyResolver
+        class CustomAssemblyResolver : BaseAssemblyResolver
         {
-            private List<AssemblyDefinition> _cache; // store cached reference assemblies
-            
+            readonly IDictionary<string, AssemblyDefinition> cache;
+
             /// <summary>
             /// Creates a Custom Assembly Resolver and preload the cache with some reference assemblies.
             /// </summary>
-            /// <param name="paths">A bunch of reference assemblies.</param>
+            /// <param name="paths">Paths to reference assemblies.</param>
             public CustomAssemblyResolver(IEnumerable<string> paths)
-                : base()
             {
-                this._cache = new List<AssemblyDefinition>();
+                cache = new Dictionary<string, AssemblyDefinition>(StringComparer.Ordinal);
                 foreach (string path in paths)
                 {
                     var assembly = AssemblyDefinition.ReadAssembly(path);
                     this.RegisterAssembly(assembly);
-                    this._cache.Add(assembly); // store assemblies for lookup later
                 }
             }
 
+		    public override AssemblyDefinition Resolve(AssemblyNameReference name)
+		    {
+			    if (name == null)
+				    throw new ArgumentNullException("name");
+
+			    AssemblyDefinition assembly;
+                Console.WriteLine("DEBUG\tSearching cache for {0}", name.Name);
+                if (cache.TryGetValue(name.Name, out assembly)) // use Name instead of FullName (see below)
+                {
+                    Console.WriteLine("DEBUG\tFound {0}", name.Name);
+                    return assembly;
+                }
+
+                // if it's not in the cache, it's not important!
+                throw new AssemblyResolutionException(name);
+		    }
+
+		    protected void RegisterAssembly(AssemblyDefinition assembly)
+		    {
+			    if (assembly == null)
+				    throw new ArgumentNullException("assembly");
+
+                // Store assembly in cache in version agnostic way
+                // FullName = "RhinoCommon, Version=5.1.30000.16, Culture=neutral, PublicKeyToken=552281e97c755530"
+                // Name     = "RhinoCommon"
+			    var name = assembly.Name.Name; // use Name as key so that versions don't matter
+			    if (cache.ContainsKey(name))
+				    return; // TODO: throw an error here and tell the user what's wrong
+
+			    cache[name] = assembly;
+		    }
+
             /// <summary>
-            /// Gets names of assemblies loaded into resolver cache. This array is a copy.
+            /// Gets names of assemblies loaded into resolver cache. This array is a copy (paranoid or what?!).
             /// </summary>
-            public AssemblyDefinition[] Assemblies
+            public IDictionary<string, AssemblyDefinition> Cache
             {
-                get { return _cache.ToArray(); } // copied so things can't get messed up
+                get { return new Dictionary<string, AssemblyDefinition>(cache); }
             }
         }
     }

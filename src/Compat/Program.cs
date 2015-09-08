@@ -9,13 +9,39 @@ namespace Compat
 {
     class Program
     {
+        static Logger logger = new Logger(){ Level=Logger.LogLevel.INFO };
+
+        const string version = "0.1-beta";
+
         static int Main(string[] args)
         {
-            // first arg is the path to the main assembly being processed
             if (args.Length < 1)
             {
+                Console.WriteLine("Compat.exe {0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] <assembly> <reference>...", version);
+                logger.Warning("Not enough arguments");
                 return 100; // not enough arguments?
             }
+
+            // control verbosity
+            if (args[0] == "--quiet" || args[0] == "-q")
+            {
+                logger.Level = Logger.LogLevel.WARNING;
+                args = args.Skip(1).ToArray();
+            }
+            else if (args[0] == "--debug")
+            {
+                logger.Level = Logger.LogLevel.DEBUG;
+                args = args.Skip(1).ToArray();
+            }
+
+            // again, check if we have enough arguments
+            if (args.Length < 1)
+            {
+                logger.Warning("Not enough arguments");
+                return 100; // not enough arguments?
+            }
+
+            // first arg is the path to the main assembly being processed
             string fileName = args[0];
 
             // second arg and onwards should be paths to reference assemblies
@@ -35,21 +61,33 @@ namespace Compat
             // definition is defined in an assembly in this list
             IDictionary<string, AssemblyDefinition> cache = customResolver.Cache;
 
-            // print assembly name, cached assembly names and reference assembly names
-            Console.WriteLine("{0}\n", module.Assembly.FullName);
+            // print assembly name
+            logger.Info("The assembly in question:");
+            logger.Info("{0}", module.Assembly.FullName);
+
+            // print cached assembly names (i.e. runtime references)
             if (args.Length > 1)
             {
+                logger.Info("Reference assembly(s):");
                 foreach (var assembly in args.Skip(1))
                 {
-                    Console.WriteLine(AssemblyDefinition.ReadAssembly(assembly).FullName);
+                    logger.Info(AssemblyDefinition.ReadAssembly(assembly).FullName);
                 }
-                Console.WriteLine("");
             }
-            foreach (AssemblyNameReference reference in module.AssemblyReferences)
+            else // no reference assemblies. Grab the skipping rope
             {
-                Console.WriteLine(reference.FullName);
+                logger.Warning("No reference assemblies specified (i.e. empty resolution cache)");
             }
-            Console.WriteLine("");
+
+            // print assembly references (buildtime)
+            if (module.AssemblyReferences.Count > 0)
+            {
+              logger.Info("{0} has the following assembly reference(s):", module.Assembly.Name.Name);
+              foreach (AssemblyNameReference reference in module.AssemblyReferences)
+              {
+                  logger.Info(reference.FullName);
+              }
+            }
 
             // global failure tracker
             bool failure = false;
@@ -57,27 +95,29 @@ namespace Compat
             // iterate over all the TYPES
             foreach (TypeDefinition type in module.Types)
             {
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine("CLASS\t{0}", type.FullName);
-                Console.ResetColor();
+                logger.Info("CLASS {0}", type.FullName);
 
                 // iterate over all the METHODS that have a method body
                 foreach (MethodDefinition method in type.Methods)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("METHOD\t{0}", method.FullName);
-                    Console.ResetColor();
+                    logger.Info("METHOD {0}", method.FullName);
                     if (!method.HasBody) // skip if no body
                         continue;
-                    
+
                     // iterate over all the INSTRUCTIONS
                     foreach (var instruction in method.Body.Instructions)
                     {
-                        Console.WriteLine(
-                            "{0}\t{1}\t{2}",
+                      // skip if no operand
+                      if (instruction.Operand == null)
+                          continue;
+
+                        logger.Debug(
+                            "Found instruction at {0} with code: {1}",
                             instruction.Offset,
-                            instruction.OpCode.Code,
-                            instruction.Operand == null ? "<null>" : string.Format("{0} / {1}", instruction.Operand.GetType().FullName, instruction.Operand.ToString()));
+                            instruction.OpCode.Code);
+                        logger.Info(
+                            "INSTRUCTION ({0}) {1}",
+                            instruction.Operand.GetType().FullName, instruction.Operand.ToString());
 
                         // get the scope (the name of the assembly in which the operand is defined)
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
@@ -86,24 +126,21 @@ namespace Compat
                             // skip if scope is not in the list of cached reference assemblies
                             if (!cache.ContainsKey(scope.Name))
                             {
-                                Console.WriteLine("RESULT\tSkip ({0} is not in the list)", scope.Name);
+                                logger.Info("Skipping ({0} is not in the list)", scope.Name);
                                 continue;
                             }
+                            logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
                             // try to resolve operand
                             // this is the big question - does the field/method/class exist in one of
                             // the cached reference assemblies
                             bool success = TryResolve(instruction.Operand);
                             if (success)
-                                // TODO: print nothing (unless DEBUG)
-                                Console.ForegroundColor = ConsoleColor.Green;
+                                logger.Info("Successfully resolved {0}", instruction.Operand.ToString());
                             else
                             {
-                                // TODO: print information about field/method/class that couldn't be resolved
-                                Console.ForegroundColor = ConsoleColor.Red;
+                                logger.Error("Couldn't resolve {0}", instruction.Operand.ToString());
                                 failure = true; // set global failure (non-zero exit code)
                             }
-                            Console.WriteLine("RESULT\t{0}", success); // print resolution status
-                            Console.ResetColor();
                         }
                     }
                 }
@@ -155,9 +192,7 @@ namespace Compat
             // log output
             if (scope != null)
             {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine("SCOPE\t{0}", scope);
-                Console.ResetColor();
+                logger.Info("Scope is {0}", scope);
             }
 
             return scope;
@@ -228,13 +263,13 @@ namespace Compat
 				    throw new ArgumentNullException("name");
 
 			    AssemblyDefinition assembly;
-                Console.WriteLine("DEBUG\tSearching cache for {0}", name.Name);
+                logger.Debug("Searching cache for {0}", name.Name);
                 if (cache.TryGetValue(name.Name, out assembly)) // use Name instead of FullName (see below)
                 {
-                    Console.WriteLine("DEBUG\tFound {0}", name.Name);
+                    logger.Info("Found {0}", assembly.FullName);
                     return assembly;
                 }
-
+                logger.Debug("We don't care about {0}", name.Name);
                 // if it's not in the cache, it's not important!
                 throw new AssemblyResolutionException(name);
 		    }
@@ -261,6 +296,56 @@ namespace Compat
             {
                 get { return new Dictionary<string, AssemblyDefinition>(cache); }
             }
+        }
+
+        class Logger
+        {
+          public enum LogLevel
+          {
+            ERROR,
+            WARNING,
+            INFO,
+            DEBUG
+          }
+
+          public LogLevel Level = LogLevel.DEBUG;
+
+          public void Debug(string format, params object[] args)
+          {
+            if (Level >= LogLevel.DEBUG)
+              Console.WriteLine(format, args);
+          }
+
+          public void Info(string format, params object[] args)
+          {
+            if (Level >= LogLevel.INFO)
+              WriteLine(string.Format(format, args), ConsoleColor.DarkCyan);
+          }
+
+          public void Warning(string format, params object[] args)
+          {
+            if (Level >= LogLevel.WARNING)
+              WriteLine(string.Format(format, args), ConsoleColor.DarkYellow);
+          }
+
+          public void Error(string format, params object[] args)
+          {
+            if (Level >= LogLevel.ERROR)
+              WriteLine(string.Format(format, args), ConsoleColor.Red);
+          }
+
+          void WriteLine(string message, ConsoleColor color)
+          {
+            Console.ForegroundColor = color;
+            try
+            {
+              Console.WriteLine(message);
+            }
+            finally
+            {
+              Console.ResetColor();
+            }
+          }
         }
     }
 }

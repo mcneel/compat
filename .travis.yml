@@ -1,0 +1,15 @@
+language: csharp
+sudo: false
+env:
+  global:
+  - ARTIFACTS_KEY=AKIAIJ6RNS2NO5AJFEWA
+  - secure: Xl6yiQYNQQvWk1HLKqazeT+KMQLWx5SJ1Gw3uq5px+/iVSnVgZNEvdXFeFv66DJ6by7vqRm7FcOa2w91a0U+8RkYnpeJHgp6i4StU/+SOGcZzw/beUzyWNqe6wJCEF80tRo5LeKpqZFMGfqA9rkk2JVxjeho36uTnADNIh9FHdYMsiTSZdqV5wCZVIRU21Ewlt33yCHE/kdICS/pTuY0lOBUSfrdcB7OMIr+ay1tJrVIwkSoqJzD4J+2eq+3pcyUwXgNv03ZdPw3LmQEbKkT86Mk0Sg4s0Lq5xTfZY7KpT5Xcxa+BlE5Ikx50EATqXDOBzU8iedB3Nl46LLmzeeNl7X/nSZegSjO+Jl/OrYHZS3vqLTI+lyVbl6o2Ia8LDubL2Qb4cwjBWthewX2GPpC5py9l+eras+Ousb64T8w4tYYH5d6/YqtBmtHIa3PdPnuNQ03Db/iOmQEQgtO4+eH2OQ5udPZ/Qx6gpgP6S1wLv4zySt9wr2TT05h7UpR4X1GM7Zi3qCovB10274fNkfrKLvRu8Bwq2Qc7kuYKKaUR/U7ofEKvrJDMhm3u0CS2dp5XAePaUdQh6r0TPnSeMYHorTGt03P+i4JiAs9Kz9F9RPFE7vU+DMQ4dEBwTf5E9jBsEONvCKJDpFN1XUQjOjMd9Db4oLLzDBhvzQAYJId6dc=
+  - ARTIFACTS_S3_BUCKET=erdos
+  - ARTIFACTS_S3_REGION=eu-west-1
+  - ARTIFACTS_PERMISSIONS=public-read
+  - ARTIFACTS_TARGET_PATHS=builds/compat
+solution: src/Compat.sln
+after_success:
+- zip -j compat-${TRAVIS_BUILD_NUMBER}.zip src/Compat/bin/Release/{Compat.exe,Mono.Cecil.dll}
+- curl -sL https://raw.githubusercontent.com/travis-ci/artifacts/master/install | bash
+- artifacts upload compat-${TRAVIS_BUILD_NUMBER}.zip

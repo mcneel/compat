@@ -92,8 +92,10 @@ namespace Compat
             // global failure tracker
             bool failure = false;
 
+            List<TypeDefinition> types = GetAllTypesAndNestedTypes(module.Types);
+
             // iterate over all the TYPES
-            foreach (TypeDefinition type in module.Types)
+            foreach (TypeDefinition type in types)
             {
                 logger.Info("CLASS {0}", type.FullName);
 
@@ -151,6 +153,25 @@ namespace Compat
                 return 1;
             else
                 return 0;
+        }
+
+        /// <summary>
+        /// Gets all types and nested types recursively.
+        /// </summary>
+        /// <param name="types">A bunch of types.</param>
+        /// <returns>All the types and their nested types (and their nested types...).</returns>
+        static List<TypeDefinition> GetAllTypesAndNestedTypes(IEnumerable<TypeDefinition> types)
+        {
+            var list = new List<TypeDefinition>();
+            foreach (TypeDefinition type in types)
+            {
+                list.Add(type);
+                if (type.HasNestedTypes)
+                {
+                    list.AddRange(GetAllTypesAndNestedTypes(type.NestedTypes)); // recursive!
+                }
+            }
+            return list;
         }
 
         /// <summary>

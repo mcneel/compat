@@ -23,8 +23,10 @@ namespace Compat
             }
 
             // control verbosity
+            bool quiet = false;
             if (args[0] == "--quiet" || args[0] == "-q")
             {
+                quiet = true;
                 logger.Level = Logger.LogLevel.WARNING;
                 args = args.Skip(1).ToArray();
             }
@@ -71,32 +73,33 @@ namespace Compat
             IDictionary<string, AssemblyDefinition> cache = customResolver.Cache;
 
             // print assembly name
-            logger.Info("The assembly in question:");
-            logger.Info("{0}", module.Assembly.FullName);
-
-            // print cached assembly names (i.e. runtime references)
-            if (args.Length > 1)
-            {
-                logger.Info("Reference assembly(s):");
-                foreach (var assembly in args.Skip(1))
-                {
-                    logger.Info(AssemblyDefinition.ReadAssembly(assembly).FullName);
-                }
-            }
-            else // no reference assemblies. Grab the skipping rope
-            {
-                logger.Warning("No reference assemblies specified (i.e. empty resolution cache)");
-            }
+            logger.Info("{0}\n", module.Assembly.FullName);
 
             // print assembly references (buildtime)
             if (module.AssemblyReferences.Count > 0)
             {
-              logger.Info("{0} has the following assembly reference(s):", module.Assembly.Name.Name);
-              foreach (AssemblyNameReference reference in module.AssemblyReferences)
-              {
-                  logger.Info(reference.FullName);
-              }
+                logger.Info("Assembly references:", module.Assembly.Name.Name);
+                foreach (AssemblyNameReference reference in module.AssemblyReferences)
+                {
+                    logger.Info("  {0}", reference.FullName);
+                }
             }
+            logger.Info("");
+
+            // print cached assembly names (i.e. runtime references)
+            if (args.Length > 1)
+            {
+                logger.Info("Cached assemblies:");
+                foreach (var assembly in args.Skip(1))
+                {
+                    logger.Info("  {0}", AssemblyDefinition.ReadAssembly(assembly).FullName);
+                }
+            }
+            else // no reference assemblies. Grab the skipping rope
+            {
+                logger.Warning("Empty resolution cache (no reference assemblies specified");
+            }
+            logger.Info("");
 
             // global failure tracker
             bool failure = false;
@@ -106,12 +109,12 @@ namespace Compat
             // iterate over all the TYPES
             foreach (TypeDefinition type in types)
             {
-                logger.Info("CLASS {0}", type.FullName);
+                Pretty.Class("{0}", type.FullName);
 
                 // iterate over all the METHODS that have a method body
                 foreach (MethodDefinition method in type.Methods)
                 {
-                    logger.Info("METHOD {0}", method.FullName);
+                    Pretty.Method("{0}", method.FullName);
                     if (!method.HasBody) // skip if no body
                         continue;
 
@@ -126,9 +129,8 @@ namespace Compat
                             "Found instruction at {0} with code: {1}",
                             instruction.Offset,
                             instruction.OpCode.Code);
-                        logger.Info(
-                            "INSTRUCTION ({0}) {1}",
-                            instruction.Operand.GetType().FullName, instruction.Operand.ToString());
+
+                        string instructionString = instruction.Operand.ToString(); // for sake of consistency
 
                         // get the scope (the name of the assembly in which the operand is defined)
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
@@ -137,7 +139,8 @@ namespace Compat
                             // skip if scope is not in the list of cached reference assemblies
                             if (!cache.ContainsKey(scope.Name))
                             {
-                                logger.Info("Skipping ({0} is not in the list)", scope.Name);
+                                if (!quiet)
+                                    Pretty.Instruction(ResolutionStatus.Skipped, instructionString);
                                 continue;
                             }
                             logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
@@ -146,10 +149,13 @@ namespace Compat
                             // the cached reference assemblies
                             bool success = TryResolve(instruction.Operand);
                             if (success)
-                                logger.Info("Successfully resolved {0}", instruction.Operand.ToString());
+                            {
+                                if (!quiet)
+                                    Pretty.Instruction(ResolutionStatus.Success, instructionString);
+                            }
                             else
                             {
-                                logger.Error("Couldn't resolve {0}", instruction.Operand.ToString());
+                                Pretty.Instruction(ResolutionStatus.Failure, instructionString);
                                 failure = true; // set global failure (non-zero exit code)
                             }
                         }
@@ -222,7 +228,7 @@ namespace Compat
             // log output
             if (scope != null)
             {
-                logger.Info("Scope is {0}", scope);
+                logger.Debug("Scope is {0}", scope);
             }
 
             return scope;
@@ -296,7 +302,7 @@ namespace Compat
                 logger.Debug("Searching cache for {0}", name.Name);
                 if (cache.TryGetValue(name.Name, out assembly)) // use Name instead of FullName (see below)
                 {
-                    logger.Info("Found {0}", assembly.FullName);
+                    logger.Debug("Found {0}", assembly.FullName);
                     return assembly;
                 }
                 logger.Debug("We don't care about {0}", name.Name);
@@ -343,13 +349,13 @@ namespace Compat
           public void Debug(string format, params object[] args)
           {
             if (Level >= LogLevel.DEBUG)
-              Console.WriteLine(format, args);
+              Console.WriteLine("DEBUG " + format, args);
           }
 
           public void Info(string format, params object[] args)
           {
             if (Level >= LogLevel.INFO)
-              WriteLine(string.Format(format, args), ConsoleColor.DarkCyan);
+              Console.WriteLine(format, args);
           }
 
           public void Warning(string format, params object[] args)
@@ -370,6 +376,50 @@ namespace Compat
             try
             {
               Console.WriteLine(message);
+            }
+            finally
+            {
+              Console.ResetColor();
+            }
+          }
+        }
+
+        enum ResolutionStatus
+        {
+          Success,
+          Failure,
+          Skipped
+        }
+
+        static class Pretty
+        {
+          static public void Class(string format, params object[] args)
+          {
+              WriteColor(format, args, ConsoleColor.Magenta);
+          }
+
+          static public void Method(string format, params object[] args)
+          {
+              WriteColor("  " + format, args, ConsoleColor.DarkCyan);
+          }
+
+          static public void Instruction(ResolutionStatus status, string format, params object[] args)
+          {
+              Console.Write("    ");
+              if (status == ResolutionStatus.Success)
+                  WriteColor("\u2713 " + format, args, ConsoleColor.Green);
+              else if (status == ResolutionStatus.Failure)
+                  WriteColor("\u2717 " + format, args, ConsoleColor.Red);
+              else
+                  WriteColor("\u271D " + format, args, ConsoleColor.Gray);
+          }
+
+          static void WriteColor(string format, object[] args, ConsoleColor color)
+          {
+            Console.ForegroundColor = color;
+            try
+            {
+              Console.WriteLine(format, args);
             }
             finally
             {

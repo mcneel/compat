@@ -51,10 +51,19 @@ namespace Compat
 
             // load the plugin module (with the custom assembly resolver)
             // TODO: perhaps we should load the plugin assembly then iterate through all modules
-            ModuleDefinition module = ModuleDefinition.ReadModule(fileName, new ReaderParameters
+            ModuleDefinition module;
+            try
             {
-                AssemblyResolver = customResolver
-            });
+                module = ModuleDefinition.ReadModule(fileName, new ReaderParameters
+                {
+                    AssemblyResolver = customResolver
+                });
+            }
+            catch (BadImageFormatException)
+            {
+                logger.Error(fileName + " is not a .NET assembly");
+                return 110;
+            }
 
             // extract cached reference assemblies from custom assembly resolver
             // we'll query these later to make sure we only attempt to resolve a reference when the

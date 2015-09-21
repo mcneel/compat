@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,16 +47,18 @@ namespace Compat
             // first arg is the path to the main assembly being processed
             string fileName = args[0];
 
-            // second arg and onwards should be paths to reference assemblies
-            // instantiate custom assembly resolver that loads reference assemblies into cache
-            // note: ONLY these assemblies will be available to the resolver
-            var customResolver = new CustomAssemblyResolver(args.Skip(1));
-
-            // load the plugin module (with the custom assembly resolver)
-            // TODO: perhaps we should load the plugin assembly then iterate through all modules
+            // load module and assembly resolver
             ModuleDefinition module;
+            CustomAssemblyResolver customResolver;
             try
             {
+                // second arg and onwards should be paths to reference assemblies
+                // instantiate custom assembly resolver that loads reference assemblies into cache
+                // note: ONLY these assemblies will be available to the resolver
+                customResolver = new CustomAssemblyResolver(args.Skip(1));
+
+                // load the plugin module (with the custom assembly resolver)
+                // TODO: perhaps we should load the plugin assembly then iterate through all modules
                 module = ModuleDefinition.ReadModule(fileName, new ReaderParameters
                 {
                     AssemblyResolver = customResolver
@@ -65,6 +68,11 @@ namespace Compat
             {
                 logger.Error(fileName + " is not a .NET assembly");
                 return 110;
+            }
+            catch (FileNotFoundException e)
+            {
+                logger.Error("Couldn't find {0}. Are you sure it exists?", e.FileName);
+                return 111;
             }
 
             // extract cached reference assemblies from custom assembly resolver

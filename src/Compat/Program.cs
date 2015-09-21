@@ -140,7 +140,7 @@ namespace Compat
                             if (!cache.ContainsKey(scope.Name))
                             {
                                 if (!quiet)
-                                    Pretty.Instruction(ResolutionStatus.Skipped, instructionString);
+                                    Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
                                 continue;
                             }
                             logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
@@ -151,11 +151,11 @@ namespace Compat
                             if (success)
                             {
                                 if (!quiet)
-                                    Pretty.Instruction(ResolutionStatus.Success, instructionString);
+                                    Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
                             }
                             else
                             {
-                                Pretty.Instruction(ResolutionStatus.Failure, instructionString);
+                                Pretty.Instruction(ResolutionStatus.Failure, scope.Name, instructionString);
                                 failure = true; // set global failure (non-zero exit code)
                             }
                         }
@@ -403,9 +403,10 @@ namespace Compat
               WriteColor("  " + format, args, ConsoleColor.DarkCyan);
           }
 
-          static public void Instruction(ResolutionStatus status, string format, params object[] args)
+          static public void Instruction(ResolutionStatus status, string scope, string format, params object[] args)
           {
               Console.Write("    ");
+              format += " < " + scope;
               if (status == ResolutionStatus.Success)
                   WriteColor("\u2713 " + format, args, ConsoleColor.Green);
               else if (status == ResolutionStatus.Failure)

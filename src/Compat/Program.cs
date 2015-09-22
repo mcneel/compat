@@ -75,6 +75,12 @@ namespace Compat
                 return 111;
             }
 
+            if (module.Assembly.Name.Name == "")
+            {
+                logger.Error ("Assembly has no name. This is unexpected.");
+                return 120;
+            }
+
             // extract cached reference assemblies from custom assembly resolver
             // we'll query these later to make sure we only attempt to resolve a reference when the
             // definition is defined in an assembly in this list

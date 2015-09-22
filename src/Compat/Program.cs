@@ -138,7 +138,8 @@ namespace Compat
                             instruction.Offset,
                             instruction.OpCode.Code);
 
-                        string instructionString = instruction.Operand.ToString(); // for sake of consistency
+                        string instructionString = instruction.Operand.ToString() // for sake of consistency
+                            .Replace("{", "{{").Replace("}", "}}"); // escape curly brackets
 
                         // get the scope (the name of the assembly in which the operand is defined)
                         IMetadataScope scope = GetOperandScope(instruction.Operand);

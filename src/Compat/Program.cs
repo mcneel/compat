@@ -155,6 +155,9 @@ namespace Compat
                         IMetadataScope scope = GetOperandScope(instruction.Operand);
                         if (scope != null)
                         {
+                            // pinvoke?
+                            logger.Debug("Is PInvoke? {0}", IsPInvoke(instruction.Operand));
+
                             // skip if scope is not in the list of cached reference assemblies
                             if (!cache.ContainsKey(scope.Name))
                             {
@@ -251,6 +254,31 @@ namespace Compat
             }
 
             return scope;
+        }
+
+        /// <summary>
+        /// Checks if the operand calls a native library, via PInvoke.
+        /// </summary>
+        /// <param name="operand">The operand in question.</param>
+        /// <returns>True if the operand is a PInvoke, otherwise false.</returns>
+        static bool IsPInvoke(object operand)
+        {
+            // try to cast operand to either method or field definition
+            var mdef = operand as MethodDefinition;
+            if (mdef != null)
+            {
+                return mdef.IsPInvokeImpl;
+            }
+            else
+            {
+                var fdef = operand as FieldDefinition;
+                if (fdef != null)
+                {
+                    return fdef.IsPInvokeImpl;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

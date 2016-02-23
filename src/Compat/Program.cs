@@ -89,6 +89,10 @@ namespace Compat
             // print assembly name
             logger.Info("{0}\n", module.Assembly.FullName);
 
+            // mixed mode
+            bool isMixed = (module.Attributes & ModuleAttributes.ILOnly) != ModuleAttributes.ILOnly;
+            logger.Info("Mixed mode? {0}\n", isMixed);
+
             // print assembly references (buildtime)
             if (module.AssemblyReferences.Count > 0)
             {

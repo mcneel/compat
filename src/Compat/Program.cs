@@ -263,20 +263,25 @@ namespace Compat
         /// <returns>True if the operand is a PInvoke, otherwise false.</returns>
         static bool IsPInvoke(object operand)
         {
-            // try to cast operand to either method or field definition
+            // try to cast operand to method definition and check for PInvoke
             var mdef = operand as MethodDefinition;
             if (mdef != null)
             {
-                return mdef.IsPInvokeImpl;
-            }
-            else
-            {
-                var fdef = operand as FieldDefinition;
-                if (fdef != null)
+                if (mdef.IsPInvokeImpl)
                 {
-                    return fdef.IsPInvokeImpl;
+                    logger.Debug(mdef.PInvokeInfo.Module.Name);
+                    return true;
                 }
             }
+            // I don't think testing fields is necessary...
+            //else
+            //{
+            //    var fdef = operand as FieldDefinition;
+            //    if (fdef != null)
+            //    {
+            //        return fdef.IsPInvokeImpl;
+            //    }
+            //}
 
             return false;
         }

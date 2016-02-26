@@ -269,6 +269,7 @@ namespace Compat
         /// <returns>True if the operand is a PInvoke, otherwise false.</returns>
         static bool IsPInvoke(object operand, out ModuleReference nativeLib)
         {
+            nativeLib = null;
             // try to cast operand to method definition and check for PInvoke
             var mdef = operand as MethodDefinition;
             if (mdef != null)
@@ -276,22 +277,15 @@ namespace Compat
                 if (mdef.IsPInvokeImpl)
                 {
                     logger.Debug("Is PInvoke? {0}", true);
-                    nativeLib = mdef.PInvokeInfo.Module;
-                    logger.Debug("Native library: {0}", nativeLib.Name);
+                    if (mdef.PInvokeInfo != null)
+                    {
+                      nativeLib = mdef.PInvokeInfo.Module;
+                      logger.Debug("Native library: {0}", nativeLib.Name);
+                    }
                     return true;
                 }
             }
-            // I don't think testing fields is necessary...
-            //else
-            //{
-            //    var fdef = operand as FieldDefinition;
-            //    if (fdef != null)
-            //    {
-            //        return fdef.IsPInvokeImpl;
-            //    }
-            //}
 
-            nativeLib = null;
             return false;
         }
 

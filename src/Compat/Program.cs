@@ -12,13 +12,13 @@ namespace Compat
     {
         static Logger logger = new Logger(){ Level=Logger.LogLevel.INFO };
 
-        const string version = "0.1-beta";
+        static readonly string version = Properties.Resources.Version;
 
         static int Main(string[] args)
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Compat.exe {0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] <assembly> <reference>...", version);
+                Console.WriteLine("compat/{0}Usage: [mono] Compat.exe [-q | --quiet | --debug] <assembly> <reference>...", version);
                 logger.Warning("Not enough arguments");
                 return 100; // not enough arguments?
             }

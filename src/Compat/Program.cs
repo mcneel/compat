@@ -156,7 +156,13 @@ namespace Compat
                         if (scope != null)
                         {
                             // pinvoke?
-                            logger.Debug("Is PInvoke? {0}", IsPInvoke(instruction.Operand));
+                            ModuleReference nativeModule;
+                            bool isPInvoke = IsPInvoke(instruction.Operand, out nativeModule);
+                            if (isPInvoke && nativeModule != null)
+                            {
+                                Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
+                                continue;
+                            }
 
                             // skip if scope is not in the list of cached reference assemblies
                             if (!cache.ContainsKey(scope.Name))
@@ -261,7 +267,7 @@ namespace Compat
         /// </summary>
         /// <param name="operand">The operand in question.</param>
         /// <returns>True if the operand is a PInvoke, otherwise false.</returns>
-        static bool IsPInvoke(object operand)
+        static bool IsPInvoke(object operand, out ModuleReference nativeLib)
         {
             // try to cast operand to method definition and check for PInvoke
             var mdef = operand as MethodDefinition;
@@ -269,7 +275,9 @@ namespace Compat
             {
                 if (mdef.IsPInvokeImpl)
                 {
-                    logger.Debug(mdef.PInvokeInfo.Module.Name);
+                    logger.Debug("Is PInvoke? {0}", true);
+                    nativeLib = mdef.PInvokeInfo.Module;
+                    logger.Debug("Native library: {0}", nativeLib.Name);
                     return true;
                 }
             }
@@ -283,6 +291,7 @@ namespace Compat
             //    }
             //}
 
+            nativeLib = null;
             return false;
         }
 
@@ -440,7 +449,8 @@ namespace Compat
         {
           Success,
           Failure,
-          Skipped
+          Skipped,
+          PInvoke
         }
 
         static class Pretty
@@ -463,6 +473,8 @@ namespace Compat
                   WriteColor("\u2713 " + format, args, ConsoleColor.Green);
               else if (status == ResolutionStatus.Failure)
                   WriteColor("\u2717 " + format, args, ConsoleColor.Red);
+              else if (status == ResolutionStatus.PInvoke)
+                  WriteColor("P " + format, args, ConsoleColor.DarkYellow);
               else
                   WriteColor("\u271D " + format, args, ConsoleColor.Gray);
           }

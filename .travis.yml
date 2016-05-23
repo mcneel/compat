@@ -12,6 +12,6 @@ env:
 solution: src/Compat.sln
 before_script: echo -n "$(cat ${VERSION_FILE})+${TRAVIS_BUILD_NUMBER} (git ${TRAVIS_COMMIT:0:7}; $(date -u))" > $VERSION_FILE
 after_success:
-- zip -j compat-${TRAVIS_BUILD_NUMBER}.zip src/Compat/bin/Release/{Compat.exe,Mono.Cecil.dll} LICENSE
+- zip -j compat-${TRAVIS_BUILD_NUMBER}.zip bin/Release/{Compat.exe,Mono.Cecil.dll} LICENSE
 - curl -sL https://raw.githubusercontent.com/travis-ci/artifacts/master/install | bash
 - artifacts upload compat-${TRAVIS_BUILD_NUMBER}.zip

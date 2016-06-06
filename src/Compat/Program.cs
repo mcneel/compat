@@ -14,13 +14,26 @@ namespace Compat
 
         static readonly string version = Properties.Resources.Version.TrimEnd(System.Environment.NewLine.ToCharArray());
 
+        // error codes
+        private const int ERROR_UNHANDLED_EXCEPTION = 128; // git uses 128 a lot, so why not
+        private const int ERROR_BAD_COMMAND = 100;
+        private const int ERROR_NOT_NET = 110;
+        private const int ERROR_NOT_THERE = 111;
+        private const int ERROR_COMPAT = 112;
+        private const int ERROR_PINVOKE = 113;
+
+        static void Usage(string message)
+        {
+            Console.WriteLine("compat/{0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] [--treat-pinvoke-as-error] <assembly> <reference>...", version);
+            if (message != null) logger.Warning(message);
+        }
+
         static int Main(string[] args)
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("compat/{0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] <assembly> <reference>...", version);
-                logger.Warning("Not enough arguments");
-                return 100; // not enough arguments?
+                Usage("Not enough arguments");
+                return ERROR_BAD_COMMAND;
             }
 
             // control verbosity
@@ -40,12 +53,34 @@ namespace Compat
             // again, check if we have enough arguments
             if (args.Length < 1)
             {
-                logger.Warning("Not enough arguments");
-                return 100; // not enough arguments?
+                Usage("Not enough arguments");
+                return ERROR_BAD_COMMAND;
+            }
+
+            // should we return an error code if pinvokes exist?
+
+            bool treatPInvokeAsError = false;
+            if (args[0] == "--treat-pinvoke-as-error")
+            {
+                treatPInvokeAsError = true;
+                args = args.Skip(1).ToArray();
+            }
+
+            // again, check if we have enough arguments
+            if (args.Length < 1)
+            {
+                Usage("Not enough arguments");
+                return ERROR_BAD_COMMAND;
             }
 
             // first arg is the path to the main assembly being processed
             string fileName = args[0];
+
+            if (!File.Exists(fileName))
+            {
+                logger.Error("Couldn't find {0}. Are you sure it exists?", fileName);
+                return ERROR_NOT_THERE;
+            }
 
             // load module and assembly resolver
             ModuleDefinition module;
@@ -67,18 +102,18 @@ namespace Compat
             catch (BadImageFormatException)
             {
                 logger.Error(fileName + " is not a .NET assembly");
-                return 110;
+                return ERROR_NOT_NET;
             }
             catch (FileNotFoundException e)
             {
                 logger.Error("Couldn't find {0}. Are you sure it exists?", e.FileName);
-                return 111;
+                return ERROR_NOT_THERE;
             }
 
             if (module.Assembly.Name.Name == "")
             {
                 logger.Error ("Assembly has no name. This is unexpected.");
-                return 120;
+                return ERROR_UNHANDLED_EXCEPTION;
             }
 
             // extract cached reference assemblies from custom assembly resolver
@@ -119,8 +154,9 @@ namespace Compat
             bool isMixed = (module.Attributes & ModuleAttributes.ILOnly) != ModuleAttributes.ILOnly;
             logger.Info("Mixed-mode? {0}\n", isMixed);
 
-            // global failure tracker
+            // global failure/pinvoke trackers for setting return code
             bool failure = false;
+            bool pinvoke = false;
 
             List<TypeDefinition> types = GetAllTypesAndNestedTypes(module.Types);
 
@@ -161,6 +197,7 @@ namespace Compat
                             if (isPInvoke && nativeModule != null)
                             {
                                 Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
+                                pinvoke = true;
                                 continue;
                             }
 
@@ -193,9 +230,11 @@ namespace Compat
 
             // exit code
             if (failure)
-                return 1;
+                return ERROR_COMPAT;
+            else if (pinvoke && treatPInvokeAsError)
+                return ERROR_PINVOKE;
             else
-                return 0;
+                return 0; // a-ok
         }
 
         /// <summary>

@@ -226,6 +226,10 @@ namespace Compat
                         }
                     }
                 }
+
+                // check that all abstract methods in the base type (where appropriate) have been implemented
+                // note: base type resolved against the referenced assemblies
+                failure |= CheckAbstractMethods(type) == false;
             }
 
             // exit code
@@ -426,6 +430,56 @@ namespace Compat
             {
                 get { return new Dictionary<string, AssemblyDefinition>(cache); }
             }
+        }
+
+        /// <summary>
+        /// Checks that all abstract methods and properties of the base class have been implemented.
+        /// </summary>
+        /// <returns><c>true</c>, if one of more abstract methods were not implemented in the derived class,
+        /// <c>false</c> otherwise.</returns>
+        /// <param name="type">A class.</param>
+        /// <remarks>Resolves the base class against the reference assemblies supplied on the command line.</remarks>
+        static bool CheckAbstractMethods(TypeDefinition type)
+        {
+            bool failure = false;
+            // ensure all abstract methods in the base class are overridden
+            TypeDefinition @base = null;
+
+            if (null != type.BaseType)
+            {
+                // resolve the base class so we're checking against the version of the library that we want 
+                try
+                {
+                    @base = type.BaseType.Resolve();
+                }
+                catch (AssemblyResolutionException)
+                {
+                    logger.Warning("Couldn't resolve base class: {0}", type.BaseType.FullName);
+                }
+
+                if (null != @base)
+                {
+                    Console.WriteLine("  Overrides ({0})", @base.FullName);
+
+                    foreach (var method in @base.Methods)
+                    {
+                        if (!method.IsAbstract)
+                            continue;
+
+                        bool is_overridden = null != Utils.TryMatchMethod(type, method);
+
+                        if (is_overridden)
+                            Pretty.Instruction(ResolutionStatus.Success, @base.Module.Name, method.FullName);
+                        else
+                        {
+                            failure = true;
+                            Pretty.Instruction(ResolutionStatus.Failure, @base.Module.Name, method.FullName);
+                        }
+                    }
+                }
+            }
+
+            return (!failure);
         }
 
         class Logger

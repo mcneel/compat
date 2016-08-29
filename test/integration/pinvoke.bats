@@ -5,13 +5,15 @@ function setup {
   xbuild projects/PInvokeExample/PInvokeExample.sln
 }
 
-@test "run compat against pinvoke example project" {
+@test "should detect pinvokes" {
   run mono ../../bin/Debug/Compat.exe projects/PInvokeExample/PInvokeExample/bin/Debug/PInvokeExample.exe
   echo "$output"
   [ "$status" -eq 0 ]
+  echo "$output" | grep "P System.Int32 PlatformInvokeTest::puts(System.String) < msvcrt.dll"
+  echo "$output" | grep "P System.Int32 PlatformInvokeTest::_flushall() < msvcrt.dll"
 }
 
-@test "run compat against pinvoke example project with --treat-pinvoke-as-error" {
+@test "should treat pinvokes as failures if --treat-pinvoke-as-error flag provided" {
   run mono ../../bin/Debug/Compat.exe --treat-pinvoke-as-error projects/PInvokeExample/PInvokeExample/bin/Debug/PInvokeExample.exe
   echo "$output"
   [ "$status" -eq 113 ]

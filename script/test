@@ -9,22 +9,29 @@ cd "$(dirname "$0")/.."
 export COMPAT_ROOT=$(pwd)
 
 function run_bats() {
+  for bats_file in $(find $1 -name \*.bats); do
+    echo "==> $bats_file"
+    echo
 
-    for bats_file in $(find test/integration -name \*.bats); do
-        echo "==> $bats_file"
-        echo
+    # BATS returns non-zero to indicate the tests have failed, we shouldn't
+    # necessarily bail in this case, so that's the reason for the e toggle.
+    set +e
+    bats "$bats_file"
+    if [[ $? -ne 0 ]]; then
+        EXIT_STATUS=1
+    fi
+    set -e
 
-        # BATS returns non-zero to indicate the tests have failed, we shouldn't
-        # necessarily bail in this case, so that's the reason for the e toggle.
-        set +e
-        bats "$bats_file"
-        if [[ $? -ne 0 ]]; then
-            EXIT_STATUS=1
-        fi
-        set -e
-
-        echo
-    done
+    echo
+  done
 }
 
-run_bats
+BATS_FILE="test/integration"
+
+if [ $1 ]; then
+  if [[ $1 =~ ^integration.* ]]; then
+      BATS_FILE="test/$1*"
+  fi
+fi
+
+run_bats "$BATS_FILE"

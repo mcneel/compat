@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# script/test: Run test suite for application. Optionally pass in a path to an
+#              individual test file to run a single test.
+
+set -e
+
+cd "$(dirname "$0")/.."
+export COMPAT_ROOT=$(pwd)
+
+function run_bats() {
+
+    for bats_file in $(find test/integration -name \*.bats); do
+        echo "==> $bats_file"
+        echo
+
+        # BATS returns non-zero to indicate the tests have failed, we shouldn't
+        # necessarily bail in this case, so that's the reason for the e toggle.
+        set +e
+        bats "$bats_file"
+        if [[ $? -ne 0 ]]; then
+            EXIT_STATUS=1
+        fi
+        set -e
+
+        echo
+    done
+}
+
+run_bats

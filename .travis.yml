@@ -2,6 +2,7 @@ language: csharp
 sudo: false
 env:
   global:
+  - PACKAGE_NAME=compat-${TRAVIS_BUILD_NUMBER}
   - ARTIFACTS_KEY=AKIAIJ6RNS2NO5AJFEWA
   - secure: Xl6yiQYNQQvWk1HLKqazeT+KMQLWx5SJ1Gw3uq5px+/iVSnVgZNEvdXFeFv66DJ6by7vqRm7FcOa2w91a0U+8RkYnpeJHgp6i4StU/+SOGcZzw/beUzyWNqe6wJCEF80tRo5LeKpqZFMGfqA9rkk2JVxjeho36uTnADNIh9FHdYMsiTSZdqV5wCZVIRU21Ewlt33yCHE/kdICS/pTuY0lOBUSfrdcB7OMIr+ay1tJrVIwkSoqJzD4J+2eq+3pcyUwXgNv03ZdPw3LmQEbKkT86Mk0Sg4s0Lq5xTfZY7KpT5Xcxa+BlE5Ikx50EATqXDOBzU8iedB3Nl46LLmzeeNl7X/nSZegSjO+Jl/OrYHZS3vqLTI+lyVbl6o2Ia8LDubL2Qb4cwjBWthewX2GPpC5py9l+eras+Ousb64T8w4tYYH5d6/YqtBmtHIa3PdPnuNQ03Db/iOmQEQgtO4+eH2OQ5udPZ/Qx6gpgP6S1wLv4zySt9wr2TT05h7UpR4X1GM7Zi3qCovB10274fNkfrKLvRu8Bwq2Qc7kuYKKaUR/U7ofEKvrJDMhm3u0CS2dp5XAePaUdQh6r0TPnSeMYHorTGt03P+i4JiAs9Kz9F9RPFE7vU+DMQ4dEBwTf5E9jBsEONvCKJDpFN1XUQjOjMd9Db4oLLzDBhvzQAYJId6dc=
   - ARTIFACTS_S3_BUCKET=erdos
@@ -13,6 +14,8 @@ solution: src/Compat.sln
 script: script/cibuild
 before_script: echo -n "$(cat ${VERSION_FILE})+${TRAVIS_BUILD_NUMBER} (git ${TRAVIS_COMMIT:0:7}; $(date -u))" > $VERSION_FILE
 after_success:
-- zip -j compat-${TRAVIS_BUILD_NUMBER}.zip bin/Release/{Compat.exe,Mono.Cecil.dll} LICENSE
+- if [[ "$TRAVIS_TAG" != "" ]]; then export PACKAGE_NAME=compat-${TRAVIS_TAG}; fi
+- mkdir dist
+- zip -j dist/${PACKAGE_NAME}.zip bin/Release/{Compat.exe,Mono.Cecil.dll} LICENSE
 - curl -sL https://raw.githubusercontent.com/travis-ci/artifacts/master/install | bash
-- artifacts upload compat-${TRAVIS_BUILD_NUMBER}.zip
+- artifacts upload dist/${PACKAGE_NAME}.zip

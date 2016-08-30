@@ -6,7 +6,7 @@ function setup {
 }
 
 @test "should exit with 0 if all abstract methods of the base class are implemented in the derived class" {
-  run mono ../../bin/Debug/Compat.exe projects/rdktest/rdktest/bin/Debug/rdktest.dll lib/rhino_en-us_6.0.16231.01091/RhinoCommon.dll
+  run mono ../../bin/Release/Compat.exe projects/rdktest/rdktest/bin/Debug/rdktest.dll lib/rhino_en-us_6.0.16231.01091/RhinoCommon.dll
   echo "$output"
   [ "$status" -eq 0 ]
   echo "$output" | grep "Overrides (Rhino.PlugIns.RenderPlugIn)"
@@ -14,7 +14,7 @@ function setup {
 }
 
 @test "should fail if the signatures of overridden abstract methods have changed" {
-  run mono ../../bin/Debug/Compat.exe projects/rdktest/rdktest/bin/Debug/rdktest.dll lib/rhino_en-us_6.0.16176.11441/RhinoCommon.dll
+  run mono ../../bin/Release/Compat.exe projects/rdktest/rdktest/bin/Debug/rdktest.dll lib/rhino_en-us_6.0.16176.11441/RhinoCommon.dll
   echo "$output"
   [ "$status" -eq 112 ]
 }

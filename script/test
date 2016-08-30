@@ -16,9 +16,13 @@ function run_bats() {
     # BATS returns non-zero to indicate the tests have failed, we shouldn't
     # necessarily bail in this case, so that's the reason for the e toggle.
     set +e
-    bats "$bats_file"
+    if [ $CI ]; then
+      bats --tap "$bats_file"
+    else
+      bats "$bats_file"
+    fi
     if [[ $? -ne 0 ]]; then
-        EXIT_STATUS=1
+      EXIT_STATUS=1
     fi
     set -e
 
@@ -35,3 +39,5 @@ if [ $1 ]; then
 fi
 
 run_bats "$BATS_FILE"
+
+exit ${EXIT_STATUS}

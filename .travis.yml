@@ -10,6 +10,7 @@ env:
   - ARTIFACTS_TARGET_PATHS=builds/compat
   - VERSION_FILE=src/Compat/Resources/Version.txt
 solution: src/Compat.sln
+script: script/cibuild
 before_script: echo -n "$(cat ${VERSION_FILE})+${TRAVIS_BUILD_NUMBER} (git ${TRAVIS_COMMIT:0:7}; $(date -u))" > $VERSION_FILE
 after_success:
 - zip -j compat-${TRAVIS_BUILD_NUMBER}.zip bin/Release/{Compat.exe,Mono.Cecil.dll} LICENSE

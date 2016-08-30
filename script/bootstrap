@@ -15,3 +15,8 @@ if [ -f "Brewfile" ] && [ "$(uname -s)" = "Darwin" ]; then
     brew bundle
   }
 fi
+
+# if ci + linux, try installing bats via npm
+if [ $CI ] && [ "$(uname -s)" = "Linux" ]; then
+  npm install bats
+fi

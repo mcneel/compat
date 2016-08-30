@@ -17,7 +17,7 @@ namespace Compat
         // error codes
         private const int ERROR_UNHANDLED_EXCEPTION = 128; // git uses 128 a lot, so why not
         private const int ERROR_BAD_COMMAND = 100;
-        private const int ERROR_NOT_NET = 110;
+        private const int ERROR_NOT_DOTNET = 110;
         private const int ERROR_NOT_THERE = 111;
         private const int ERROR_COMPAT = 112;
         private const int ERROR_PINVOKE = 113;
@@ -101,8 +101,8 @@ namespace Compat
             }
             catch (BadImageFormatException)
             {
-                logger.Error(fileName + " is not a .NET assembly");
-                return ERROR_NOT_NET;
+                logger.Error("One (or more) of the files specified is not a .NET assembly");
+                return ERROR_NOT_DOTNET;
             }
             catch (FileNotFoundException e)
             {

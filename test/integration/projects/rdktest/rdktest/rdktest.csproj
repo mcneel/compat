@@ -31,7 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RhinoCommon">
-      <HintPath>..\..\..\lib\rhino_en-us_6.0.16231.01091\RhinoCommon.dll</HintPath>
+      <HintPath>..\..\..\lib\rhino_en-us_6.0.16176.11441\RhinoCommon.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

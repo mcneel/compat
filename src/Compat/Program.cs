@@ -78,8 +78,27 @@ namespace Compat
 
             if (!File.Exists(fileName))
             {
+                // if the file doesn't exist, it might be a directory
+                // TODO: handle directories
+                if (Directory.Exists(fileName))
+                {
+                    logger.Error("{0} appears to be a directory; .NET assemblies only, please.", fileName);
+                    return ERROR_NOT_DOTNET;
+                }
                 logger.Error("Couldn't find {0}. Are you sure it exists?", fileName);
                 return ERROR_NOT_THERE;
+            }
+
+            // check that the main file is a dot net assembly
+            // this gives a clearer error message than the "one or more..." error
+            try
+            {
+                System.Reflection.AssemblyName.GetAssemblyName(fileName);
+            }
+            catch (System.BadImageFormatException)
+            {
+                logger.Error("{0} is not a .NET assembly.", fileName);
+                return ERROR_NOT_DOTNET;
             }
 
             // load module and assembly resolver
@@ -447,7 +466,7 @@ namespace Compat
 
             if (null != type.BaseType)
             {
-                // resolve the base class so we're checking against the version of the library that we want 
+                // resolve the base class so we're checking against the version of the library that we want
                 try
                 {
                     @base = type.BaseType.Resolve();

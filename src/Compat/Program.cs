@@ -229,7 +229,7 @@ namespace Compat
                             // try to resolve operand
                             // this is the big question - does the field/method/class exist in one of
                             // the cached reference assemblies
-                            bool success = TryResolve(instruction.Operand);
+                            bool success = TryResolve(instruction.Operand, type);
                             if (success)
                             {
                                 if (!quiet)
@@ -353,8 +353,14 @@ namespace Compat
         /// Try to resolve an operand if it is either a field, a method or a class.
         /// </summary>
         /// <param name="operand">The operand in question.</param>
+        /// <param name="calling_type">The <see cref="TypeDefinition"/> to which
+        /// the <paramref name="operand"/> belongs.</param>
         /// <returns>True if successful.</returns>
-        static bool TryResolve(object operand)
+        /// <remarks>
+        /// Also checks the accessiblity of the resolved member, in case the
+        /// modifiers have changed.
+        /// </remarks>
+        static bool TryResolve(object operand, TypeDefinition calling_type)
         {
             try
             {
@@ -363,20 +369,20 @@ namespace Compat
                 var fref = operand as FieldReference;
                 if (fref != null)
                 {
-                    fref.Resolve();
-                    return true;
+                    var fdef = fref.Resolve();
+                    return Utils.IsFieldAccessible(fdef, calling_type);
                 }
                 var mref = operand as MethodReference;
                 if (mref != null)
                 {
-                    mref.Resolve();
-                    return true;
+                    var mdef = mref.Resolve();
+                    return Utils.IsMethodAccessible(mdef, calling_type);
                 }
                 var tref = operand as TypeReference;
                 if (tref != null)
                 {
-                    tref.Resolve();
-                    return true;
+                    var tdef = tref.Resolve();
+                    return Utils.IsTypeAccessible(tdef, calling_type);
                 }
             }
             catch (AssemblyResolutionException)

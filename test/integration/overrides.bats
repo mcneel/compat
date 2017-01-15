@@ -18,3 +18,9 @@ function setup {
   echo "$output"
   [ "$status" -eq 112 ]
 }
+
+@test "should not fail during overrides if class is itself abstract" {
+  run mono ../../bin/Release/Compat.exe projects/rdktest/rdktest_abstract/bin/Debug/rdktest_abstract.dll lib/rhino_en-us_6.0.16231.01091/RhinoCommon.dll
+  echo "$output"
+  [ "$status" -eq 0 ]
+}

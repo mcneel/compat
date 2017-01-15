@@ -229,7 +229,7 @@ namespace Compat
                             // try to resolve operand
                             // this is the big question - does the field/method/class exist in one of
                             // the cached reference assemblies
-                            bool success = TryResolve(instruction.Operand);
+                            bool success = TryResolve(instruction.Operand, type);
                             if (success)
                             {
                                 if (!quiet)
@@ -353,8 +353,14 @@ namespace Compat
         /// Try to resolve an operand if it is either a field, a method or a class.
         /// </summary>
         /// <param name="operand">The operand in question.</param>
+        /// <param name="calling_type">The <see cref="TypeDefinition"/> to which
+        /// the <paramref name="operand"/> belongs.</param>
         /// <returns>True if successful.</returns>
-        static bool TryResolve(object operand)
+        /// <remarks>
+        /// Also checks the accessiblity of the resolved member, in case the
+        /// modifiers have changed.
+        /// </remarks>
+        static bool TryResolve(object operand, TypeDefinition calling_type = null)
         {
             try
             {
@@ -363,19 +369,35 @@ namespace Compat
                 var fref = operand as FieldReference;
                 if (fref != null)
                 {
-                    fref.Resolve();
+                    var fdef = fref.Resolve();
+                    if (fdef.IsPrivate)
+                        return false;
+                    if (fdef.IsAssembly) // internal
+                        return false;
+                    if (fdef.IsFamily && !IsDerived(calling_type, fdef.DeclaringType))
+                        // allow protected if calling type is derived from declaring type
+                        return false;
                     return true;
                 }
                 var mref = operand as MethodReference;
                 if (mref != null)
                 {
-                    mref.Resolve();
+                    var mdef = mref.Resolve();
+                    if (mdef.IsPrivate)
+                        return false;
+                    if (mdef.IsAssembly) // internal
+                        return false;
+                    if (mdef.IsFamily && !IsDerived(calling_type, mdef.DeclaringType))
+                        // allow protected if calling type is derived from declaring type
+                        return false;
                     return true;
                 }
                 var tref = operand as TypeReference;
                 if (tref != null)
                 {
-                    tref.Resolve();
+                    var tdef = tref.Resolve();
+                    if (tdef.IsNotPublic)
+                        return false;
                     return true;
                 }
             }
@@ -384,6 +406,27 @@ namespace Compat
                 return false;
             }
             return false; // just in case
+        }
+
+        /// <summary>
+        /// Checks whether <paramref name="type"/> is derived from <param name="base_type"/>.
+        /// </summary>
+        /// <returns><c>true</c> or <c>false</c>.</returns>
+        static bool IsDerived(TypeDefinition type, TypeReference base_type)
+        {
+            if (type == null || type.BaseType == null)
+                return false;
+            if (type.BaseType.FullName == base_type.FullName)
+                return true;
+            try
+            {
+                IsDerived(type.BaseType.Resolve(), base_type);
+            }
+            catch (AssemblyResolutionException)
+            {
+                return false;
+            }
+            return false;
         }
 
         /// <summary>

@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessTest", "AccessTest\AccessTest.csproj", "{91B3A9DA-34D0-4B06-815C-B3DF2ECC63AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessTestLib", "AccessTestLib\AccessTestLib.csproj", "{A05CB5BA-0FAB-4321-AB37-81CF5A6CE8E4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91B3A9DA-34D0-4B06-815C-B3DF2ECC63AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91B3A9DA-34D0-4B06-815C-B3DF2ECC63AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91B3A9DA-34D0-4B06-815C-B3DF2ECC63AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91B3A9DA-34D0-4B06-815C-B3DF2ECC63AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A05CB5BA-0FAB-4321-AB37-81CF5A6CE8E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A05CB5BA-0FAB-4321-AB37-81CF5A6CE8E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A05CB5BA-0FAB-4321-AB37-81CF5A6CE8E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A05CB5BA-0FAB-4321-AB37-81CF5A6CE8E4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

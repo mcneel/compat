@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Compat
 {
@@ -254,10 +252,10 @@ namespace Compat
             // exit code
             if (failure)
                 return ERROR_COMPAT;
-            else if (pinvoke && treatPInvokeAsError)
+            if (pinvoke && treatPInvokeAsError)
                 return ERROR_PINVOKE;
-            else
-                return 0; // a-ok
+
+            return 0; // a-ok
         }
 
         /// <summary>
@@ -464,7 +462,10 @@ namespace Compat
             // ensure all abstract methods in the base class are overridden
             TypeDefinition @base = null;
 
-            if (null != type.BaseType)
+            // 14 Jan 2017 S. Baer
+            // If the type itself is abstract, then it doesn't need to implement all
+            // of the abstract members in it's base class
+            if (null != type.BaseType && !type.IsAbstract)
             {
                 // resolve the base class so we're checking against the version of the library that we want
                 try

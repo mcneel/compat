@@ -127,4 +127,22 @@ namespace AccessTestLib
   public class PublicClassBecomesInternal
 #endif
   { }
+
+  /////////////
+  // STRUCTS //
+  /////////////
+
+#if ACCESS
+  struct PublicStructBecomesPrivate
+#else
+  public struct PublicStructBecomesPrivate
+#endif
+  { }
+
+#if ACCESS
+  internal struct PublicStructBecomesInternal
+#else
+  public struct PublicStructBecomesInternal
+#endif
+  { }
 }

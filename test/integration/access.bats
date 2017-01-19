@@ -86,6 +86,14 @@ function teardown {
   cat test_output | grep "✗ System.Void AccessTestLib.MyClass/NestedClassBecomesInternal::.ctor() < AccessTestLib"
 # }
 
+# @test "should fail if public struct becomes private" {
+  cat test_output | grep "✗ AccessTestLib.PublicStructBecomesPrivate < AccessTestLib"
+# }
+
+# @test "should fail if public struct becomes internal" {
+  cat test_output | grep "✗ AccessTestLib.PublicStructBecomesInternal < AccessTestLib"
+# }
+
 # @test "should pass if public method becomes protected when called from derived class" {
   cat test_output | grep "✓ System.Void AccessTestLib.MyClass::PublicMethodBecomesProtected() < AccessTestLib"
 # }

@@ -89,6 +89,16 @@ namespace AccessTest
 
       // get type of nested class that will later be internal
       var cls11 = typeof(AccessTestLib.MyClass.NestedClassBecomesInternal);
+
+      /////////////
+      // STRUCTS //
+      /////////////
+
+      var str = new AccessTestLib.PublicStructBecomesPrivate();
+      var str2 = typeof(AccessTestLib.PublicStructBecomesPrivate);
+
+      var str3 = new AccessTestLib.PublicStructBecomesInternal();
+      var str4 = typeof(AccessTestLib.PublicStructBecomesInternal);
     }
   }
 

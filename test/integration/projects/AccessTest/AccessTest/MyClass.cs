@@ -23,6 +23,9 @@ namespace AccessTest
       // call method that will later be internal
       cls.PublicMethodBecomesInternal();
 
+      // call method that will later be protected internal
+      cls.PublicMethodBecomesProtectedInternal();
+
       ////////////
       // FIELDS //
       ////////////
@@ -114,6 +117,14 @@ namespace AccessTest
 
       // get type of class that will later be protected
       var cls2 = typeof(NestedClassBecomesProtected);
+
+
+
+      // NOTE: everything here should FAIL the compat test against AccessTestLib
+      // compiled with ACCESS constant defined
+
+      // call method that will later be protected internal
+      this.PublicMethodBecomesProtectedInternal();
     }
   }
 }

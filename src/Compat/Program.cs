@@ -374,7 +374,9 @@ namespace Compat
                         return false;
                     if (fdef.IsAssembly) // internal
                         return false;
-                    if (fdef.IsFamily && !IsDerived(calling_type, fdef.DeclaringType))
+                    if (fdef.IsFamilyAndAssembly)
+                        return false;
+                    if ((fdef.IsFamily || fdef.IsFamilyOrAssembly) && !IsDerived(calling_type, fdef.DeclaringType))
                         // allow protected if calling type is derived from declaring type
                         return false;
                     return true;
@@ -387,16 +389,21 @@ namespace Compat
                         return false;
                     if (mdef.IsAssembly) // internal
                         return false;
-                    if (mdef.IsFamily && !IsDerived(calling_type, mdef.DeclaringType))
-                        // allow protected if calling type is derived from declaring type
+                    if (mdef.IsFamilyAndAssembly) // private protected
+                        return false;
+                    if ((mdef.IsFamily || mdef.IsFamilyOrAssembly) && !IsDerived(calling_type, mdef.DeclaringType))
+                        // allow protected (and protected internal) if calling type is derived from declaring type
                         return false;
                     if (mdef.DeclaringType.IsNested)
                     {
-                        if (mdef.DeclaringType.Resolve().IsNestedPrivate)
+                        var mdef_tdef = mdef.DeclaringType.Resolve();
+                        if (mdef_tdef.IsNestedPrivate)
                             return false;
-                        if (mdef.DeclaringType.Resolve().IsNestedAssembly)
+                        if (mdef_tdef.IsNestedAssembly)
                             return false;
-                        if (mdef.DeclaringType.Resolve().IsNestedFamily && !IsDerived(calling_type, GetOuterType(mdef.DeclaringType)))
+                        if (mdef_tdef.IsNestedFamilyAndAssembly)
+                            return false;
+                        if ((mdef_tdef.IsNestedFamily || mdef_tdef.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, GetOuterType(mdef.DeclaringType)))
                             return false;
                     }
                     if (mdef.DeclaringType.IsNotPublic)
@@ -413,7 +420,9 @@ namespace Compat
                         return false;
                     if (tdef.IsNestedAssembly)
                         return false;
-                    if (tdef.IsNestedFamily && !IsDerived(calling_type, tdef.DeclaringType))
+                    if (tdef.IsNestedFamilyAndAssembly)
+                        return false;
+                    if ((tdef.IsNestedFamily || tdef.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, tdef.DeclaringType))
                         return false;
                     return true;
                 }
@@ -449,12 +458,12 @@ namespace Compat
         static TypeReference GetOuterType(TypeDefinition nested_type)
         {
             TypeReference outer_type = null;
-
             var s = nested_type.FullName.Split('/');
-            var name = string.Join("/", s.Take(s.Length - 1));
-
-            outer_type = nested_type.Module.GetType(name);
-
+            if (s.Length > 1)
+            {
+                var name = string.Join("/", s.Take(s.Length - 1));
+                outer_type = nested_type.Module.GetType(name);
+            }
             return outer_type;
         }
 

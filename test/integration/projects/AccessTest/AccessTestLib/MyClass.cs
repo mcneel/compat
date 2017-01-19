@@ -30,6 +30,13 @@ namespace AccessTestLib
 #endif
     { }
 
+#if ACCESS
+    protected internal void PublicMethodBecomesProtectedInternal()
+#else
+    public void PublicMethodBecomesProtectedInternal()
+#endif
+    { }
+
     ////////////
     // FIELDS //
     ////////////

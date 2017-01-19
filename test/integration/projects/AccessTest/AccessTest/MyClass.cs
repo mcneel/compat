@@ -58,12 +58,40 @@ namespace AccessTest
 
       // instanstiate class that will later be internal
       var cls3 = new AccessTestLib.PublicClassBecomesInternal();
+
+      // get type of class that will later be private
+      var cls4 = typeof(AccessTestLib.PublicClassBecomesPrivate);
+
+      // get type of class that will later be internal
+      var cls5 = typeof(AccessTestLib.PublicClassBecomesInternal);
+
+      //////////////////
+      // NESTED TYPES //
+      //////////////////
+
+      // instanstiate nested class that will later be private
+      var cls6 = new AccessTestLib.MyClass.NestedClassBecomesPrivate();
+
+      // instanstiate nested class that will later be protected
+      var cls7 = new AccessTestLib.MyClass.NestedClassBecomesProtected();
+
+      // instanstiate nested class that will later be internal
+      var cls8 = new AccessTestLib.MyClass.NestedClassBecomesInternal();
+
+      // get type of nested class that will later be private
+      var cls9 = typeof(AccessTestLib.MyClass.NestedClassBecomesPrivate);
+
+      // get type of nested class that will later be protected
+      var cls10 = typeof(AccessTestLib.MyClass.NestedClassBecomesProtected);
+
+      // get type of nested class that will later be internal
+      var cls11 = typeof(AccessTestLib.MyClass.NestedClassBecomesInternal);
     }
   }
 
-  //////////////
-  // SUBTYPES //
-  //////////////
+  ///////////////
+  // PROTECTED //
+  ///////////////
 
   public class DerivedClass : AccessTestLib.MyClass
   {
@@ -80,6 +108,12 @@ namespace AccessTest
 
       // call property setter that will later be protected
       this.PublicPropertyBecomesProtected = b;
+
+      // instanstiate class that will later be protected
+      var cls = new NestedClassBecomesProtected();
+
+      // get type of class that will later be protected
+      var cls2 = typeof(NestedClassBecomesProtected);
     }
   }
 }

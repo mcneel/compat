@@ -390,6 +390,17 @@ namespace Compat
                     if (mdef.IsFamily && !IsDerived(calling_type, mdef.DeclaringType))
                         // allow protected if calling type is derived from declaring type
                         return false;
+                    if (mdef.DeclaringType.IsNested)
+                    {
+                        if (mdef.DeclaringType.Resolve().IsNestedPrivate)
+                            return false;
+                        if (mdef.DeclaringType.Resolve().IsNestedAssembly)
+                            return false;
+                        if (mdef.DeclaringType.Resolve().IsNestedFamily && !IsDerived(calling_type, GetOuterType(mdef.DeclaringType)))
+                            return false;
+                    }
+                    if (mdef.DeclaringType.IsNotPublic)
+                        return false;
                     return true;
                 }
                 var tref = operand as TypeReference;
@@ -397,6 +408,12 @@ namespace Compat
                 {
                     var tdef = tref.Resolve();
                     if (tdef.IsNotPublic)
+                        return false;
+                    if (tdef.IsNestedPrivate)
+                        return false;
+                    if (tdef.IsNestedAssembly)
+                        return false;
+                    if (tdef.IsNestedFamily && !IsDerived(calling_type, tdef.DeclaringType))
                         return false;
                     return true;
                 }
@@ -414,7 +431,7 @@ namespace Compat
         /// <returns><c>true</c> or <c>false</c>.</returns>
         static bool IsDerived(TypeDefinition type, TypeReference base_type)
         {
-            if (type == null || type.BaseType == null)
+            if (type == null || type.BaseType == null || base_type == null)
                 return false;
             if (type.BaseType.FullName == base_type.FullName)
                 return true;
@@ -427,6 +444,18 @@ namespace Compat
                 return false;
             }
             return false;
+        }
+
+        static TypeReference GetOuterType(TypeDefinition nested_type)
+        {
+            TypeReference outer_type = null;
+
+            var s = nested_type.FullName.Split('/');
+            var name = string.Join("/", s.Take(s.Length - 1));
+
+            outer_type = nested_type.Module.GetType(name);
+
+            return outer_type;
         }
 
         /// <summary>

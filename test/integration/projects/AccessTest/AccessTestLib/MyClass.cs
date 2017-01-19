@@ -76,6 +76,31 @@ namespace AccessTestLib
     public bool PublicPropertyBecomesInternal
 #endif
     { get; set; }
+
+    //////////////////
+    // NESTED TYPES //
+    //////////////////
+
+#if ACCESS
+    private class NestedClassBecomesPrivate
+#else
+    public class NestedClassBecomesPrivate
+#endif
+    { }
+
+#if ACCESS
+    protected class NestedClassBecomesProtected
+#else
+    public class NestedClassBecomesProtected
+#endif
+    { }
+
+#if ACCESS
+    internal class NestedClassBecomesInternal
+#else
+    public class NestedClassBecomesInternal
+#endif
+    { }
   }
 
   ///////////

@@ -110,6 +110,16 @@ namespace AccessTestLib
     { }
   }
 
+#if ACCESS
+  class OuterClassBecomesPrivate
+#else
+  public class OuterClassBecomesPrivate
+#endif
+  {
+    public class NestedClass
+    { }
+  }
+
   ///////////
   // TYPES //
   ///////////

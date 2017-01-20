@@ -360,7 +360,7 @@ namespace Compat
         /// Also checks the accessiblity of the resolved member, in case the
         /// modifiers have changed.
         /// </remarks>
-        static bool TryResolve(object operand, TypeDefinition calling_type = null)
+        static bool TryResolve(object operand, TypeDefinition calling_type)
         {
             try
             {
@@ -370,61 +370,19 @@ namespace Compat
                 if (fref != null)
                 {
                     var fdef = fref.Resolve();
-                    if (fdef.IsPrivate)
-                        return false;
-                    if (fdef.IsAssembly) // internal
-                        return false;
-                    if (fdef.IsFamilyAndAssembly)
-                        return false;
-                    if ((fdef.IsFamily || fdef.IsFamilyOrAssembly) && !IsDerived(calling_type, fdef.DeclaringType))
-                        // allow protected if calling type is derived from declaring type
-                        return false;
-                    return true;
+                    return Utils.IsFieldAccessible(fdef, calling_type);
                 }
                 var mref = operand as MethodReference;
                 if (mref != null)
                 {
                     var mdef = mref.Resolve();
-                    if (mdef.IsPrivate)
-                        return false;
-                    if (mdef.IsAssembly) // internal
-                        return false;
-                    if (mdef.IsFamilyAndAssembly) // private protected
-                        return false;
-                    if ((mdef.IsFamily || mdef.IsFamilyOrAssembly) && !IsDerived(calling_type, mdef.DeclaringType))
-                        // allow protected (and protected internal) if calling type is derived from declaring type
-                        return false;
-                    if (mdef.DeclaringType.IsNested)
-                    {
-                        var mdef_tdef = mdef.DeclaringType.Resolve();
-                        if (mdef_tdef.IsNestedPrivate)
-                            return false;
-                        if (mdef_tdef.IsNestedAssembly)
-                            return false;
-                        if (mdef_tdef.IsNestedFamilyAndAssembly)
-                            return false;
-                        if ((mdef_tdef.IsNestedFamily || mdef_tdef.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, GetOuterType(mdef.DeclaringType)))
-                            return false;
-                    }
-                    if (mdef.DeclaringType.IsNotPublic)
-                        return false;
-                    return true;
+                    return Utils.IsMethodAccessible(mdef, calling_type);
                 }
                 var tref = operand as TypeReference;
                 if (tref != null)
                 {
                     var tdef = tref.Resolve();
-                    if (tdef.IsNotPublic)
-                        return false;
-                    if (tdef.IsNestedPrivate)
-                        return false;
-                    if (tdef.IsNestedAssembly)
-                        return false;
-                    if (tdef.IsNestedFamilyAndAssembly)
-                        return false;
-                    if ((tdef.IsNestedFamily || tdef.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, tdef.DeclaringType))
-                        return false;
-                    return true;
+                    return Utils.IsTypeAccessible(tdef, calling_type);
                 }
             }
             catch (AssemblyResolutionException)
@@ -432,39 +390,6 @@ namespace Compat
                 return false;
             }
             return false; // just in case
-        }
-
-        /// <summary>
-        /// Checks whether <paramref name="type"/> is derived from <param name="base_type"/>.
-        /// </summary>
-        /// <returns><c>true</c> or <c>false</c>.</returns>
-        static bool IsDerived(TypeDefinition type, TypeReference base_type)
-        {
-            if (type == null || type.BaseType == null || base_type == null)
-                return false;
-            if (type.BaseType.FullName == base_type.FullName)
-                return true;
-            try
-            {
-                IsDerived(type.BaseType.Resolve(), base_type);
-            }
-            catch (AssemblyResolutionException)
-            {
-                return false;
-            }
-            return false;
-        }
-
-        static TypeReference GetOuterType(TypeDefinition nested_type)
-        {
-            TypeReference outer_type = null;
-            var s = nested_type.FullName.Split('/');
-            if (s.Length > 1)
-            {
-                var name = string.Join("/", s.Take(s.Length - 1));
-                outer_type = nested_type.Module.GetType(name);
-            }
-            return outer_type;
         }
 
         /// <summary>

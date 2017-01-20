@@ -12,7 +12,7 @@ function teardown {
   rm test_output
 }
 
-@test "should fail if members fail to resolve due to their accessibility" {
+@test "should catch all cases of members failing to resolve due to their accessibility" {
   [ "$status" -eq 112 ]
 # }
 
@@ -84,6 +84,11 @@ function teardown {
   cat test_output | grep "✗ AccessTestLib.MyClass/NestedClassBecomesInternal < AccessTestLib"
   # skip "Not yet implemented"
   cat test_output | grep "✗ System.Void AccessTestLib.MyClass/NestedClassBecomesInternal::.ctor() < AccessTestLib"
+# }
+
+# @test "should fail if outer class of public nested class becomes private" {
+  cat test_output | grep "✗ System.Void AccessTestLib.OuterClassBecomesPrivate/NestedClass::.ctor() < AccessTestLib"
+  cat test_output | grep "✗ AccessTestLib.OuterClassBecomesPrivate/NestedClass < AccessTestLib"
 # }
 
 # @test "should fail if public struct becomes private" {

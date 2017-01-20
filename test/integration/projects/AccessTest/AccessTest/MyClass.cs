@@ -90,6 +90,10 @@ namespace AccessTest
       // get type of nested class that will later be internal
       var cls11 = typeof(AccessTestLib.MyClass.NestedClassBecomesInternal);
 
+      // instantiate nested clasc when outer class will later be private
+      var cls12 = new AccessTestLib.OuterClassBecomesPrivate.NestedClass();
+      var cls13 = typeof(AccessTestLib.OuterClassBecomesPrivate.NestedClass);
+
       /////////////
       // STRUCTS //
       /////////////
@@ -127,11 +131,6 @@ namespace AccessTest
 
       // get type of class that will later be protected
       var cls2 = typeof(NestedClassBecomesProtected);
-
-
-
-      // NOTE: everything here should FAIL the compat test against AccessTestLib
-      // compiled with ACCESS constant defined
 
       // call method that will later be protected internal
       this.PublicMethodBecomesProtectedInternal();

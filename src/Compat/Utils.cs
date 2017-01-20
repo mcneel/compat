@@ -6,6 +6,8 @@ namespace Compat
 {
 	static class Utils
 	{
+        #region MethodMatching
+
 		internal static MethodDefinition TryMatchMethod(TypeDefinition type, MethodDefinition method)
 		{
 			if (type == null)
@@ -144,6 +146,123 @@ namespace Compat
 
 			return type.BaseType.Resolve();
 		}
-	}
+
+        #endregion
+
+        #region Accessibility
+
+        /// <summary>
+        /// Checks whether <paramref name="type"/> is derived from <param name="base_type"/>.
+        /// </summary>
+        /// <returns><c>true</c> if <paramref name="type"/> is derived from <paramref name="base_type"/>, <c>false</c>
+        /// otherwise.</returns>
+        internal static bool IsDerived(TypeDefinition type, TypeReference base_type)
+        {
+            if (type == null || type.BaseType == null || base_type == null)
+                return false;
+            if (type.BaseType.FullName == base_type.FullName)
+                return true;
+            try
+            {
+                IsDerived(type.BaseType.Resolve(), base_type);
+            }
+            catch (AssemblyResolutionException)
+            {
+                return false;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Checks the accessibility of a <see cref="FieldDefinition"/>.
+        /// </summary>
+        /// <returns><c>true</c>, if <paramref name="field"/> is accessible in the assembly's public API, <c>false</c>
+        /// otherwise.</returns>
+        /// <param name="calling_type">The calling type (used to assess accessibility in cases of <c>protected</c> and
+        /// <c>protected internal</c>.</param>
+        /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
+        internal static bool IsFieldAccessible(FieldDefinition field, TypeDefinition calling_type)
+        {
+            if (field.IsPrivate)
+                return false;
+            if (field.IsAssembly) // internal
+                return false;
+            if (field.IsFamilyAndAssembly)
+                return false;
+            if ((field.IsFamily || field.IsFamilyOrAssembly) && !IsDerived(calling_type, field.DeclaringType))
+                // allow protected (and protected internal) if calling type is derived from declaring type
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Checks the accessibility of a <see cref="MethodDefinition"/>.
+        /// </summary>
+        /// <returns><c>true</c>, if <paramref name="method"/> is accessible in the assembly's public API, <c>false</c>
+        /// otherwise.</returns>
+        /// <param name="method">A method.</param>
+        /// <param name="calling_type">The calling type (used to assess accessibility in cases of <c>protected</c> and
+        /// <c>protected internal</c>.</param>
+        /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
+        internal static bool IsMethodAccessible(MethodDefinition method, TypeDefinition calling_type)
+        {
+            if (method.IsPrivate)
+                return false;
+            if (method.IsAssembly) // internal
+                return false;
+            if (method.IsFamilyAndAssembly) // private protected
+                return false;
+            if ((method.IsFamily || method.IsFamilyOrAssembly) && !IsDerived(calling_type, method.DeclaringType))
+                // allow protected (and protected internal) if calling type is derived from declaring type
+                return false;
+            if (!IsTypeAccessible(method.DeclaringType, calling_type))
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Checks the accessibility of a <see cref="TypeDefinition"/>.
+        /// </summary>
+        /// <returns><c>true</c>, if <paramref name="type"/> is accessible in the assembly's public API, <c>false</c>
+        /// otherwise.</returns>
+        /// <param name="type">A type.</param>
+        /// <param name="calling_type">The calling type (used to assess accessibility in cases of <c>protected</c> and
+        /// <c>protected internal</c>.</param>
+        /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
+        internal static bool IsTypeAccessible(TypeDefinition type, TypeDefinition calling_type)
+        {
+            if (!CheckAccessibilityOfNestedType(type))
+                return false;
+            return CheckProtectedAccessibilityOfNestedType(type, calling_type);
+        }
+
+        static bool CheckAccessibilityOfNestedType(TypeDefinition type)
+        {
+            if (!type.IsNested)
+            {
+                if (type.IsNotPublic)
+                    return false;
+                return true;
+            }
+            if (type.IsNestedPrivate)
+                return false;
+            if (type.IsNestedAssembly)
+                return false;
+            if (type.IsNestedFamilyAndAssembly)
+                return false;
+            return CheckAccessibilityOfNestedType(type.DeclaringType);
+        }
+
+        static bool CheckProtectedAccessibilityOfNestedType(TypeDefinition type, TypeDefinition calling_type)
+        {
+            if (!type.IsNested)
+                return true;
+            if ((type.IsNestedFamily || type.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, type.DeclaringType))
+                return false;
+            return CheckProtectedAccessibilityOfNestedType(type.DeclaringType, calling_type);
+        }
+
+        #endregion
+    }
 }
 

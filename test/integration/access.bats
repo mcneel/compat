@@ -118,4 +118,8 @@ function teardown {
 
 # @test "should pass if public nested class becomes protected internal when called from derived class" {
   cat test_output | grep "✓ System.Void AccessTestLib.MyClass::PublicMethodBecomesProtectedInternal() < AccessTestLib"
+# }
+
+# @test "should pass if protected method called from double derived class" {
+  cat test_output | grep "✓ System.Void AccessTestLib.BaseClassWithProtectedVirtualMethod::ProtectedVirtualMethod() < AccessTestLib"
 }

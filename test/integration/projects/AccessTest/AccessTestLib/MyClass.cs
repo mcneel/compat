@@ -155,4 +155,13 @@ namespace AccessTestLib
   public struct PublicStructBecomesInternal
 #endif
   { }
+
+  // the case of the protected virtual method...
+  // see RH-37982
+
+  public class BaseClassWithProtectedVirtualMethod
+  {
+    protected virtual void ProtectedVirtualMethod()
+    { }
+  }
 }

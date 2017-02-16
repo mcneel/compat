@@ -1,4 +1,5 @@
 using System;
+
 namespace AccessTest
 {
   public class MyClass
@@ -134,6 +135,20 @@ namespace AccessTest
 
       // call method that will later be protected internal
       this.PublicMethodBecomesProtectedInternal();
+    }
+  }
+
+  // the case of the protected virtual method...
+  // see RH-37982
+
+  class DerivedClassWithProtectedOverrideMethod : AccessTestLib.BaseClassWithProtectedVirtualMethod
+  { }
+
+  class DoubleDerivedClassWithProtectedOverrideMethod : DerivedClassWithProtectedOverrideMethod
+  {
+    protected override void ProtectedVirtualMethod()
+    {
+      base.ProtectedVirtualMethod();
     }
   }
 }

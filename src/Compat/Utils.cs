@@ -164,13 +164,12 @@ namespace Compat
                 return true;
             try
             {
-                IsDerived(type.BaseType.Resolve(), base_type);
+                return IsDerived(type.BaseType.Resolve(), base_type);
             }
             catch (AssemblyResolutionException)
             {
                 return false;
             }
-            return false;
         }
 
         /// <summary>

@@ -8,7 +8,7 @@ namespace Compat
   {
     #region MethodMatching
 
-    internal static MethodDefinition TryMatchMethod(TypeDefinition type, MethodDefinition method)
+    internal static MethodDefinition TryMatchMethod(TypeDefinition type, MethodDefinition candidate)
     {
       if (type == null)
         return null;
@@ -17,8 +17,12 @@ namespace Compat
         return null;
 
       Dictionary<string, string> gp = null;
-      foreach (MethodDefinition candidate in type.Methods)
+      foreach (MethodDefinition method in type.Methods)
       {
+        // when matching overrides, the base class' method must come first, otherwise, if
+        // the derived class defines a type that was generic in the base class, TypeMatch
+        // will fail when comparing methods with generic parameters
+        // see RH-41841
         if (MethodMatch(candidate, method, ref gp))
           return candidate;
         if (gp != null)

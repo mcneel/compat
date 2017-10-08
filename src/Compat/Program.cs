@@ -20,6 +20,9 @@ namespace Compat
     private const int ERROR_COMPAT = 112;
     private const int ERROR_PINVOKE = 113;
 
+    static bool quiet = false;
+    static IDictionary<string, AssemblyDefinition> cache;
+
     static void Usage(string message)
     {
       Console.WriteLine("compat/{0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] [--treat-pinvoke-as-error] <assembly> <reference>...", version);
@@ -35,7 +38,6 @@ namespace Compat
       }
 
       // control verbosity
-      bool quiet = false;
       if (args[0] == "--quiet" || args[0] == "-q")
       {
         quiet = true;
@@ -136,7 +138,7 @@ namespace Compat
       // extract cached reference assemblies from custom assembly resolver
       // we'll query these later to make sure we only attempt to resolve a reference when the
       // definition is defined in an assembly in this list
-      IDictionary<string, AssemblyDefinition> cache = customResolver.Cache;
+      cache = customResolver.Cache;
 
       // print assembly name
       logger.Info("{0}\n", module.Assembly.FullName);
@@ -456,10 +458,11 @@ namespace Compat
     }
 
     /// <summary>
-    /// Checks that all abstract methods and properties of the base class have been implemented.
+    /// Checks that all abstract methods and properties of the base class have been implemented,
+    /// as they exist currently in the target assembly.
     /// </summary>
-    /// <returns><c>true</c>, if one of more abstract methods were not implemented in the derived class,
-    /// <c>false</c> otherwise.</returns>
+    /// <returns><c>false</c>, if one of more abstract methods were not implemented in the derived class,
+    /// <c>true</c> otherwise.</returns>
     /// <param name="type">A class.</param>
     /// <remarks>Resolves the base class against the reference assemblies supplied on the command line.</remarks>
     static bool CheckAbstractMethods(TypeDefinition type)
@@ -491,6 +494,14 @@ namespace Compat
           {
             if (!method.IsAbstract)
               continue;
+
+            // skip if base class isn't defined in one of the reference assemblies
+            if (!cache.ContainsKey(@base.Scope.Name))
+            {
+              if (!quiet)
+                Pretty.Instruction(ResolutionStatus.Skipped, @base.Scope.Name, method.FullName);
+              continue;
+            }
 
             bool is_overridden = null != Utils.TryMatchMethod(type, method);
 

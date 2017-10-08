@@ -24,3 +24,11 @@ function setup {
   echo "$output"
   [ "$status" -eq 0 ]
 }
+
+# RH-41841
+# TODO: create mock assembly
+# @test "should not fail during overrides if base class is generic" {
+#   run mono ../../bin/Release/Compat.exe --quiet files/FSharp.Compiler.Service.dll
+#   echo "$output"
+#   [ "$status" -eq 0 ]
+# }

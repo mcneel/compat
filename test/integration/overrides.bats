@@ -10,13 +10,14 @@ function setup {
   echo "$output"
   [ "$status" -eq 0 ]
   echo "$output" | grep "Overrides (Rhino.PlugIns.RenderPlugIn)"
-  echo "$output" | grep "✓ Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,Rhino.PlugIns.RenderPlugIn/RenderOptions) < RhinoCommon.dll"
+  echo "$output" | grep "✓ Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,Rhino.PlugIns.RenderPlugIn/RenderOptions) < RhinoCommon"
 }
 
 @test "should fail if the signatures of overridden abstract methods have changed" {
   run mono ../../bin/Release/Compat.exe projects/rdktest/rdktest/bin/Debug/rdktest.dll lib/rhino_en-us_6.0.16231.01091/RhinoCommon.dll
   echo "$output"
   [ "$status" -eq 112 ]
+  echo "$output" | grep "✗ Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,System.Boolean) < RhinoCommon"
 }
 
 @test "should not fail during overrides if class is itself abstract" {

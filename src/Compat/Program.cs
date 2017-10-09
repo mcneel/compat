@@ -496,21 +496,22 @@ namespace Compat
               continue;
 
             // skip if base class isn't defined in one of the reference assemblies
-            if (!cache.ContainsKey(@base.Scope.Name))
+            var scope = @base.Module.Assembly.Name; // be consistent
+            if (!cache.ContainsKey(scope.Name))
             {
               if (!quiet)
-                Pretty.Instruction(ResolutionStatus.Skipped, @base.Scope.Name, method.FullName);
+                Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, method.FullName);
               continue;
             }
 
             bool is_overridden = null != Utils.TryMatchMethod(type, method);
 
             if (is_overridden)
-              Pretty.Instruction(ResolutionStatus.Success, @base.Module.Name, method.FullName);
+              Pretty.Instruction(ResolutionStatus.Success, scope.Name, method.FullName);
             else
             {
               failure = true;
-              Pretty.Instruction(ResolutionStatus.Failure, @base.Module.Name, method.FullName);
+              Pretty.Instruction(ResolutionStatus.Failure, scope.Name, method.FullName);
             }
           }
         }

@@ -488,21 +488,17 @@ namespace Compat
 
         if (null != @base)
         {
+          // skip if base class isn't defined in one of the reference assemblies
+          var scope = @base.Module.Assembly.Name; // be consistent
+          if (!cache.ContainsKey(scope.Name))
+            return true;
+
           Console.WriteLine("  Overrides ({0})", @base.FullName);
 
           foreach (var method in @base.Methods)
           {
             if (!method.IsAbstract)
               continue;
-
-            // skip if base class isn't defined in one of the reference assemblies
-            var scope = @base.Module.Assembly.Name; // be consistent
-            if (!cache.ContainsKey(scope.Name))
-            {
-              if (!quiet)
-                Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, method.FullName);
-              continue;
-            }
 
             bool is_overridden = null != Utils.TryMatchMethod(type, method);
 

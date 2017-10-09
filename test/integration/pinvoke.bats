@@ -2,7 +2,7 @@
 
 function setup {
   cd ${COMPAT_ROOT}/test/integration
-  xbuild projects/PInvokeExample/PInvokeExample.sln
+  msbuild projects/PInvokeExample/PInvokeExample.sln
 }
 
 @test "should detect pinvokes" {

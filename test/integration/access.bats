@@ -2,8 +2,8 @@
 
 function setup {
   cd ${COMPAT_ROOT}/test/integration
-  xbuild projects/AccessTest/AccessTest.sln /t:Rebuild > test_output || cat test_output
-  xbuild projects/AccessTest/AccessTestLib/AccessTestLib.csproj /t:Rebuild /p:DefineConstants=ACCESS > test_output || cat test_output
+  msbuild projects/AccessTest/AccessTest.sln /t:Rebuild > test_output || cat test_output
+  msbuild projects/AccessTest/AccessTestLib/AccessTestLib.csproj /t:Rebuild /p:DefineConstants=ACCESS > test_output || cat test_output
   mono ../../bin/Release/Compat.exe projects/AccessTest/AccessTest/bin/Debug/AccessTest.dll projects/AccessTest/AccessTestLib/bin/Debug/AccessTestLib.dll > test_output || status=$?
   cat test_output
 }

@@ -2,7 +2,7 @@
 
 function setup {
   cd ${COMPAT_ROOT}/test/integration
-  xbuild projects/rdktest/rdktest.sln
+  msbuild projects/rdktest/rdktest.sln
 }
 
 @test "should exit with 0 if all abstract methods of the base class are implemented in the derived class" {

@@ -16,7 +16,7 @@ if [ $CI ]; then
 fi
 
 # build
-xbuild /p:Configuration=Release src/Compat.sln
+msbuild /p:Configuration=Release src/Compat.sln
 
 # test
 script/test

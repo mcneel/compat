@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Compat
 {
@@ -228,11 +229,12 @@ namespace Compat
                 continue;
               }
               logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
+              logger.Debug(instruction.Operand.ToString());
               // try to resolve operand
               // this is the big question - does the field/method/class exist in one of
               // the cached reference assemblies
               bool success = TryResolve(instruction.Operand, type);
-              if (success)
+              if (success || CheckMultidimensionalArray(instruction, method, type, scope))
               {
                 if (!quiet)
                   Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
@@ -392,6 +394,56 @@ namespace Compat
         return false;
       }
       return false; // just in case
+    }
+
+    static Dictionary<Regex, Mono.Cecil.Cil.OpCode> Patterns = new Dictionary<Regex, Mono.Cecil.Cil.OpCode>()
+    {
+      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::\.ctor", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Newarr },
+      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Get", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Stelem_Any },
+      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Set", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Ldelem_Any }
+    };
+
+    /// <summary>
+    /// Checks to see if the instruction includes a multidimensional array and
+    /// if so attempts to reconstruct the instruction as a normal (1d) array
+    /// operation (.ctor, getter or setter) and resolve that instead.
+    /// </summary>
+    /// <returns><c>true</c>, if multidimensional array was successfully
+    /// reconstructed as a 1d array instruction and successfully resolved,
+    /// <c>false</c> otherwise.</returns>
+    /// <param name="instruction">An instruction.</param>
+    /// <param name="method">The method which contains the instruction.</param>
+    /// <param name="type">The type which contains the method and instruction.</param>
+    /// <param name="scope">The scope of the instruction (name of assembly).</param>
+    /// <remarks>
+    /// Multidimensional array instructions won't resolve because "there's
+    /// nothing in the metadata to resolve to: those methods are created on the
+    /// fly by the runtime".
+    /// See https://www.mail-archive.com/mono-cecil@googlegroups.com/msg03876.html.
+    /// </remarks>
+    static bool CheckMultidimensionalArray(Mono.Cecil.Cil.Instruction instruction, MethodDefinition method, TypeDefinition type, IMetadataScope scope)
+    {
+      var processor = method.Body.GetILProcessor();
+      foreach (var pattern in Patterns)
+      {
+        var m = pattern.Key.Match(instruction.Operand.ToString());
+        if (m.Success)
+        {
+          string full_name = m.Groups[1].Value;
+          logger.Debug("Attemping to reconstruct multidimensional array instruction as '{0}' with opcode '{1}'", full_name, pattern.Value.Code);
+          var asm = cache[scope.Name];
+          var tmp_type = asm.MainModule.GetType(full_name);
+          if (tmp_type == null)
+          {
+            logger.Debug("{0} not found in {1}", full_name, scope.Name);
+            return false;
+          }
+          var new_instr = processor.Create(pattern.Value, tmp_type);
+          return TryResolve(new_instr.Operand, type);
+        }
+      }
+
+      return false;
     }
 
     /// <summary>

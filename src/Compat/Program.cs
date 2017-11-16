@@ -224,8 +224,7 @@ namespace Compat
               // skip if scope is not in the list of cached reference assemblies
               if (!cache.ContainsKey(scope.Name))
               {
-                if (!quiet)
-                  Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
+                Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
                 continue;
               }
               logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
@@ -236,8 +235,7 @@ namespace Compat
               bool success = TryResolve(instruction.Operand, type);
               if (success || CheckMultidimensionalArray(instruction, method, type, scope))
               {
-                if (!quiet)
-                  Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
+                Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
               }
               else
               {
@@ -640,16 +638,22 @@ namespace Compat
 
       static public void Instruction(ResolutionStatus status, string scope, string format, params object[] args)
       {
-        Console.Write("    ");
+        string indent = "    ";
         format += " < " + scope;
         if (status == ResolutionStatus.Success)
-          WriteColor("\u2713 " + format, args, ConsoleColor.Green);
+        {
+          if (!quiet)
+            WriteColor(indent + "\u2713 " + format, args, ConsoleColor.Green);
+        }
         else if (status == ResolutionStatus.Failure)
-          WriteColor("\u2717 " + format, args, ConsoleColor.Red);
+          WriteColor(indent + "\u2717 " + format, args, ConsoleColor.Red);
         else if (status == ResolutionStatus.PInvoke)
-          WriteColor("P " + format, args, ConsoleColor.DarkYellow);
-        else
-          WriteColor("\u271D " + format, args, ConsoleColor.Gray);
+          WriteColor(indent + "P " + format, args, ConsoleColor.DarkYellow);
+        else // skipped
+        {
+          if (!quiet)
+            WriteColor(indent + "\u271D " + format, args, ConsoleColor.Gray);
+        }
       }
 
       static void WriteColor(string format, object[] args, ConsoleColor color)

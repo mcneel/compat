@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
@@ -6,6 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rdktest", "rdktest\rdktest.csproj", "{EBD4C770-8A18-493D-AD85-C12E51461893}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rdktest_abstract", "rdktest_abstract\rdktest_abstract.csproj", "{0E13564D-8B5D-49EC-9AF3-C9B36794AE8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "2darray_test", "2darray_test\2darray_test.csproj", "{647AAD96-8B40-4282-A998-5800EC03177E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{0E13564D-8B5D-49EC-9AF3-C9B36794AE8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E13564D-8B5D-49EC-9AF3-C9B36794AE8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E13564D-8B5D-49EC-9AF3-C9B36794AE8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{647AAD96-8B40-4282-A998-5800EC03177E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{647AAD96-8B40-4282-A998-5800EC03177E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{647AAD96-8B40-4282-A998-5800EC03177E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{647AAD96-8B40-4282-A998-5800EC03177E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

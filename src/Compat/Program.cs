@@ -398,7 +398,9 @@ namespace Compat
     {
       { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::\.ctor", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Newarr },
       { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Get", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Stelem_Any },
-      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Set", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Ldelem_Any }
+      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Set", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Ldelem_Any },
+      // when you retrieve a struct from an array and immediately call a method on it => Ldelema instead of Ldelem_Any
+      { new Regex(@"([a-z0-9\.]+)\[.*?,.*?\]::Address", RegexOptions.IgnoreCase | RegexOptions.Compiled), Mono.Cecil.Cil.OpCodes.Ldelema }
     };
 
     /// <summary>

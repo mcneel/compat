@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Mono.Cecil;
 
@@ -192,9 +192,14 @@ namespace Compat
         return false;
       if (field.IsFamilyAndAssembly)
         return false;
-      if ((field.IsFamily || field.IsFamilyOrAssembly) && !IsDerived(calling_type, field.DeclaringType))
-        // allow protected (and protected internal) if calling type is derived from declaring type
-        return false;
+      // wfcook 14-sep-2020
+      // removed this call because it breaks Orca3D and would only be a concern if we ever reduced the
+      // accessibility of something and accessing it would be a breaking operation. The compiled MSIL
+      // doesn't case, and in the case of Orca3D a private nested class with access rights was optimized 
+      // by the compiler such that the outer class was the caloing class.
+      //if ((field.IsFamily || field.IsFamilyOrAssembly) && !IsDerived(calling_type, field.DeclaringType))
+      //  // allow protected (and protected internal) if calling type is derived from declaring type
+      //  return false;
       return true;
     }
 

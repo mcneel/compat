@@ -36,8 +36,9 @@ function teardown {
   cat test_output | grep "✗ System.Boolean AccessTestLib.MyClass::PublicFieldBecomesPrivate < AccessTestLib"
 # }
 
-# @test "should fail if public field becomes protected" {
-  cat test_output | grep "✗ System.Boolean AccessTestLib.MyClass::PublicFieldBecomesProtected < AccessTestLib"
+# @test "should NOT fail if public field becomes protected" {
+# see 667a4f1 and RH-60423
+  cat test_output | grep "✓ System.Boolean AccessTestLib.MyClass::PublicFieldBecomesProtected < AccessTestLib"
 # }
 
 # @test "should fail if public field becomes internal" {

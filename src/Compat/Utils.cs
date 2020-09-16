@@ -186,6 +186,12 @@ namespace Compat
     /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
     internal static bool IsFieldAccessible(FieldDefinition field, TypeDefinition calling_type)
     {
+      // wfcook 16-Sep-2020 RH-60486. Removing all accessibility checking because the compiled MSIL
+      // doesn't care, we never reduce accesibility, and sometimes calls will be optimized in such a way
+      // that they look like illegal calls even when they are not, making this check unreliable and
+      // prone to false positives
+      return true;
+      /*
       if (field.IsPrivate)
         return false;
       if (field.IsAssembly) // internal
@@ -201,6 +207,7 @@ namespace Compat
       //  // allow protected (and protected internal) if calling type is derived from declaring type
       //  return false;
       return true;
+    */
     }
 
     /// <summary>
@@ -214,6 +221,12 @@ namespace Compat
     /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
     internal static bool IsMethodAccessible(MethodDefinition method, TypeDefinition calling_type)
     {
+      // wfcook 16-Sep-2020 RH-60486. Removing all accessibility checking because the compiled MSIL
+      // doesn't care, we never reduce accesibility, and sometimes calls will be optimized in such a way
+      // that they look like illegal calls even when they are not, making this check unreliable and
+      // prone to false positives
+      return true;
+      /*
       if (method.IsPrivate)
         return false;
       if (method.IsAssembly) // internal
@@ -226,6 +239,7 @@ namespace Compat
       if (!IsTypeAccessible(method.DeclaringType, calling_type))
         return false;
       return true;
+      */
     }
 
     /// <summary>
@@ -239,14 +253,25 @@ namespace Compat
     /// <remarks>Assumes that the calling assembly is not a friend of the referenced assembly.</remarks>
     internal static bool IsTypeAccessible(TypeDefinition type, TypeDefinition calling_type)
     {
-      if (!CheckAccessibilityOfNestedType(type))
+      // wfcook 16-Sep-2020 RH-60486. Removing all accessibility checking because the compiled MSIL
+      // doesn't care, we never reduce accesibility, and sometimes calls will be optimized in such a way
+      // that they look like illegal calls even when they are not, making this check unreliable and
+      // prone to false positives
+      return true;
+      /*if (!CheckAccessibilityOfNestedType(type))
         return false;
       return CheckProtectedAccessibilityOfNestedType(type, calling_type);
+      */
     }
 
     static bool CheckAccessibilityOfNestedType(TypeDefinition type)
     {
-      if (!type.IsNested)
+      // wfcook 16-Sep-2020 RH-60486. Removing all accessibility checking because the compiled MSIL
+      // doesn't care, we never reduce accesibility, and sometimes calls will be optimized in such a way
+      // that they look like illegal calls even when they are not, making this check unreliable and
+      // prone to false positives
+      return true;
+      /*if (!type.IsNested)
       {
         if (type.IsNotPublic)
           return false;
@@ -259,15 +284,22 @@ namespace Compat
       if (type.IsNestedFamilyAndAssembly)
         return false;
       return CheckAccessibilityOfNestedType(type.DeclaringType);
+      */
     }
 
     static bool CheckProtectedAccessibilityOfNestedType(TypeDefinition type, TypeDefinition calling_type)
     {
-      if (!type.IsNested)
+      // wfcook 16-Sep-2020 RH-60486. Removing all accessibility checking because the compiled MSIL
+      // doesn't care, we never reduce accesibility, and sometimes calls will be optimized in such a way
+      // that they look like illegal calls even when they are not, making this check unreliable and
+      // prone to false positives
+      return true;
+      /*if (!type.IsNested)
         return true;
       if ((type.IsNestedFamily || type.IsNestedFamilyOrAssembly) && !IsDerived(calling_type, type.DeclaringType))
         return false;
       return CheckProtectedAccessibilityOfNestedType(type.DeclaringType, calling_type);
+      */
     }
 
     #endregion

@@ -1,8 +1,9 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace Compat
@@ -180,75 +181,83 @@ namespace Compat
 
       List<TypeDefinition> types = GetAllTypesAndNestedTypes(module.Types);
 
-      // iterate over all the TYPES
-      foreach (TypeDefinition type in types)
+      try
       {
-        Pretty.Class("{0}", type.FullName);
-
-        // iterate over all the METHODS that have a method body
-        foreach (MethodDefinition method in type.Methods)
+        // iterate over all the TYPES
+        foreach (TypeDefinition type in types)
         {
-          Pretty.Method("{0}", method.FullName);
-          if (!method.HasBody) // skip if no body
-            continue;
+          Pretty.Class("{0}", type.FullName);
 
-          // iterate over all the INSTRUCTIONS
-          foreach (var instruction in method.Body.Instructions)
+          // iterate over all the METHODS that have a method body
+          foreach (MethodDefinition method in type.Methods)
           {
-            // skip if no operand
-            if (instruction.Operand == null)
+            Pretty.Method("{0}", method.FullName);
+            if (!method.HasBody) // skip if no body
               continue;
 
-            logger.Debug(
-                "Found instruction at {0} with code: {1}",
-                instruction.Offset,
-                instruction.OpCode.Code);
-
-            string instructionString = instruction.Operand.ToString() // for sake of consistency
-                .Replace("{", "{{").Replace("}", "}}"); // escape curly brackets
-
-            // get the scope (the name of the assembly in which the operand is defined)
-            IMetadataScope scope = GetOperandScope(instruction.Operand);
-            if (scope != null)
+            // iterate over all the INSTRUCTIONS
+            foreach (var instruction in method.Body.Instructions)
             {
-              // pinvoke?
-              ModuleReference nativeModule;
-              bool isPInvoke = IsPInvoke(instruction.Operand, out nativeModule);
-              if (isPInvoke && nativeModule != null)
-              {
-                Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
-                pinvoke = true;
+              // skip if no operand
+              if (instruction.Operand == null)
                 continue;
-              }
 
-              // skip if scope is not in the list of cached reference assemblies
-              if (!cache.ContainsKey(scope.Name))
+              logger.Debug(
+                  "Found instruction at {0} with code: {1}",
+                  instruction.Offset,
+                  instruction.OpCode.Code);
+
+              string instructionString = instruction.Operand.ToString() // for sake of consistency
+                  .Replace("{", "{{").Replace("}", "}}"); // escape curly brackets
+
+              // get the scope (the name of the assembly in which the operand is defined)
+              IMetadataScope scope = GetOperandScope(instruction.Operand);
+              if (scope != null)
               {
-                Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
-                continue;
-              }
-              logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
-              logger.Debug(instruction.Operand.ToString());
-              // try to resolve operand
-              // this is the big question - does the field/method/class exist in one of
-              // the cached reference assemblies
-              bool success = TryResolve(instruction.Operand, type);
-              if (success || CheckMultidimensionalArray(instruction, method, type, scope))
-              {
-                Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
-              }
-              else
-              {
-                Pretty.Instruction(ResolutionStatus.Failure, scope.Name, instructionString);
-                failure = true; // set global failure (non-zero exit code)
+                // pinvoke?
+                ModuleReference nativeModule;
+                bool isPInvoke = IsPInvoke(instruction.Operand, out nativeModule);
+                if (isPInvoke && nativeModule != null)
+                {
+                  Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
+                  pinvoke = true;
+                  continue;
+                }
+
+                // skip if scope is not in the list of cached reference assemblies
+                if (!cache.ContainsKey(scope.Name))
+                {
+                  Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
+                  continue;
+                }
+                logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
+                logger.Debug(instruction.Operand.ToString());
+                // try to resolve operand
+                // this is the big question - does the field/method/class exist in one of
+                // the cached reference assemblies
+                bool success = TryResolve(instruction.Operand, type);
+                if (success || CheckMultidimensionalArray(instruction, method, type, scope))
+                {
+                  Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
+                }
+                else
+                {
+                  Pretty.Instruction(ResolutionStatus.Failure, scope.Name, instructionString);
+                  failure = true; // set global failure (non-zero exit code)
+                }
               }
             }
+            // check that all abstract methods in the base type (where appropriate) have been implemented
+            // note: base type resolved against the referenced assemblies
+            failure |= CheckAbstractMethods(type) == false;
           }
         }
-
-        // check that all abstract methods in the base type (where appropriate) have been implemented
-        // note: base type resolved against the referenced assemblies
-        failure |= CheckAbstractMethods(type) == false;
+      }
+      catch
+      {
+        logger.Warning("Exception occurred, cannot check the rest of the module");
+        // we don't do anything here, all we're doing is skipping the check if .Net can't look at the methods.
+        // BobCAD has this issue.
       }
 
       // exit code

@@ -654,16 +654,16 @@ namespace Compat
         if (status == ResolutionStatus.Success)
         {
           if (!quiet)
-            WriteColor(indent + "\u2713 " + format, args, ConsoleColor.Green);
+            WriteColor(indent + "\u2713 PASS " + format, args, ConsoleColor.Green);
         }
         else if (status == ResolutionStatus.Failure)
-          WriteColor(indent + "\u2717 " + format, args, ConsoleColor.Red);
+          WriteColor(indent + "\u2717 FAIL " + format, args, ConsoleColor.Red);
         else if (status == ResolutionStatus.PInvoke)
-          WriteColor(indent + "P " + format, args, ConsoleColor.DarkYellow);
+          WriteColor(indent + "\u2192 PINV " + format, args, ConsoleColor.DarkYellow);
         else // skipped
         {
           if (!quiet)
-            WriteColor(indent + "\u271D " + format, args, ConsoleColor.Gray);
+            WriteColor(indent + "\u271D SKIP " + format, args, ConsoleColor.Gray);
         }
       }
 

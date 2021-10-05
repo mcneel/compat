@@ -1,7 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\..\..\RhinoProjectPropertySheets\Rhino.Common.props" />
-  <PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
+    <TargetFramework>net6.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <UseAppHost>False</UseAppHost>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
     <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
     <EnableDefaultItems>False</EnableDefaultItems>
@@ -32,7 +39,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -54,7 +61,7 @@
       <Link>Properties\version.cs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>

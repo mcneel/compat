@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <UseAppHost>False</UseAppHost>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
     <TargetFramework>net48</TargetFramework>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\..\..\RhinoProjectPropertySheets\Rhino.Common.props" />
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <UseAppHost>False</UseAppHost>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>

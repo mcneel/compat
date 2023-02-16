@@ -1,16 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.Net.SDK">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net45</TargetFramework>
+    <GenerateDependencyFile>true</GenerateDependencyFile>
+    <NoWarn>CS0219</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="..\..\..\lib\rhino_en-us_6.0.17318.12581\RhinoCommon.dll" Private="False" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
 </Project>

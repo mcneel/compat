@@ -1,37 +1,41 @@
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Compat
 {
-  class Program
+  partial class Program
   {
     static Logger logger = new Logger() { Level = Logger.LogLevel.INFO };
 
     static readonly string version = Properties.Resources.Version.TrimEnd(System.Environment.NewLine.ToCharArray());
 
     // error codes
-    private const int ERROR_UNHANDLED_EXCEPTION = 128; // git uses 128 a lot, so why not
-    private const int ERROR_BAD_COMMAND = 100;
-    private const int ERROR_NOT_DOTNET = 110;
-    private const int ERROR_NOT_THERE = 111;
-    private const int ERROR_COMPAT = 112;
-    private const int ERROR_PINVOKE = 113;
+    public const int ERROR_UNHANDLED_EXCEPTION = 128; // git uses 128 a lot, so why not
+    public const int ERROR_BAD_COMMAND = 100;
+    public const int ERROR_NOT_DOTNET = 110;
+    public const int ERROR_NOT_THERE = 111;
+    public const int ERROR_COMPAT = 112;
+    public const int ERROR_PINVOKE = 113;
+    public const int ERROR_WARNING = 114;
 
     static bool quiet = false;
+    static bool checkAccess = false;
     static IDictionary<string, AssemblyDefinition> cache;
 
     static void Usage(string message)
     {
-      Console.WriteLine("compat/{0}\nUsage: [mono] Compat.exe [-q | --quiet | --debug] [--treat-pinvoke-as-error] <assembly> <reference>...", version);
+      Console.WriteLine("compat/{0}\nUsage: Compat [-q | --quiet | --debug] [--treat-pinvoke-as-error] [--check-access] [--check-system-assemblies] <assembly> <reference>...", version);
       if (message != null) logger.Warning(message);
     }
 
-    static int Main(string[] args)
+    internal static int Main(string[] args)
     {
       if (args.Length < 1)
       {
@@ -40,6 +44,12 @@ namespace Compat
       }
 
       // control verbosity
+      
+      // reset variables for re-entry
+      quiet = false;
+      logger.Level = Logger.LogLevel.INFO;
+      checkAccess = false;
+      
       if (args[0] == "--quiet" || args[0] == "-q")
       {
         quiet = true;
@@ -68,6 +78,27 @@ namespace Compat
         args = args.Skip(1).ToArray();
       }
 
+      if (args[0] == "--check-access")
+      {
+        checkAccess = true;
+        args = args.Skip(1).ToArray();
+      }
+
+      if (args[0] == "--check-system-assemblies")
+      {
+        args = args.Skip(1).ToArray();
+
+        var systemAssemblies = new[]
+        {
+          Assembly.Load(new AssemblyName("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
+          Assembly.Load(new AssemblyName("System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
+          Assembly.Load(new AssemblyName("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
+          typeof(System.Windows.Forms.Appearance).Assembly.Location
+        };
+
+        args = args.Concat(systemAssemblies).ToArray();
+      }
+
       // again, check if we have enough arguments
       if (args.Length < 1)
       {
@@ -93,14 +124,27 @@ namespace Compat
 
       // check that the main file is a dot net assembly
       // this gives a clearer error message than the "one or more..." error
+      System.Reflection.AssemblyName assemblyName;
       try
       {
-        System.Reflection.AssemblyName.GetAssemblyName(fileName);
+        assemblyName = System.Reflection.AssemblyName.GetAssemblyName(fileName);
       }
       catch (System.BadImageFormatException)
       {
         logger.Error("{0} is not a .NET assembly.", fileName);
         return ERROR_NOT_DOTNET;
+      }
+
+      var token = assemblyName.GetPublicKeyToken();
+      bool isIgnoreAssembly = false;
+      if (token != null)
+      {
+        var tokenName = token.Aggregate(string.Empty, (s, b) => s += b.ToString("x2", CultureInfo.InvariantCulture));
+        if (NetCore.IgnorePublicKeys.Contains(tokenName))
+          isIgnoreAssembly = true;
+
+        if (NetCore.IgnoreAssemblies.Contains((assemblyName.Name, tokenName)))
+          isIgnoreAssembly = true;
       }
 
       // load module and assembly resolver
@@ -143,7 +187,7 @@ namespace Compat
       cache = customResolver.Cache;
 
       // print assembly name
-      logger.Info("{0}\n", module.Assembly.FullName);
+      logger.Warning("{0}\n", module.Assembly.FullName);
 
       // print assembly references (buildtime)
       if (module.AssemblyReferences.Count > 0)
@@ -177,6 +221,7 @@ namespace Compat
 
       // global failure/pinvoke trackers for setting return code
       bool failure = false;
+      bool warning = false;
       bool pinvoke = false;
 
       List<TypeDefinition> types = GetAllTypesAndNestedTypes(module.Types);
@@ -186,12 +231,15 @@ namespace Compat
         // iterate over all the TYPES
         foreach (TypeDefinition type in types)
         {
-          Pretty.Class("{0}", type.FullName);
+          if (!quiet)
+            Pretty.Class("{0}", type.FullName);
 
           // iterate over all the METHODS that have a method body
           foreach (MethodDefinition method in type.Methods)
           {
-            Pretty.Method("{0}", method.FullName);
+            if (!quiet)
+              Pretty.Method("{0}", method.FullName);
+              
             if (!method.HasBody) // skip if no body
               continue;
 
@@ -219,8 +267,22 @@ namespace Compat
                 bool isPInvoke = IsPInvoke(instruction.Operand, out nativeModule);
                 if (isPInvoke && nativeModule != null)
                 {
-                  Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
+                  if (treatPInvokeAsError || !quiet)
+                    Pretty.Instruction(ResolutionStatus.PInvoke, nativeModule.Name, instructionString);
                   pinvoke = true;
+                  continue;
+                }
+                
+                // is it a .NET Core API pass its specific status.
+                if (NetCore.NetCoreExceptionApis.TryGetValue(scope.Name, out var apis) && apis.TryGetValue(instructionString, out var status))
+                {
+                  Pretty.Instruction(status, scope.Name, instructionString);
+
+                  if (isIgnoreAssembly && status == ResolutionStatus.Failure)
+                    status = ResolutionStatus.Warning;
+
+                  failure |= status == ResolutionStatus.Failure;
+                  warning |= status == ResolutionStatus.Warning;
                   continue;
                 }
 
@@ -230,6 +292,7 @@ namespace Compat
                   Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
                   continue;
                 }
+                
                 logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
                 logger.Debug(instruction.Operand.ToString());
                 // try to resolve operand
@@ -239,6 +302,12 @@ namespace Compat
                 if (success || CheckMultidimensionalArray(instruction, method, type, scope))
                 {
                   Pretty.Instruction(ResolutionStatus.Success, scope.Name, instructionString);
+                }
+                else if (isIgnoreAssembly)
+                {
+                  // if assembly is ignored, report warnings only
+                  Pretty.Instruction(ResolutionStatus.Warning, scope.Name, instructionString);
+                  warning = true; // set global failure (non-zero exit code)
                 }
                 else
                 {
@@ -253,9 +322,9 @@ namespace Compat
           }
         }
       }
-      catch
+      catch (Exception ex)
       {
-        logger.Warning("Exception occurred, cannot check the rest of the module");
+        logger.Warning($"Exception occurred, cannot check the rest of the module\n{ex}");
         // we don't do anything here, all we're doing is skipping the check if .Net can't look at the methods.
         // BobCAD has this issue.
       }
@@ -265,6 +334,8 @@ namespace Compat
         return ERROR_COMPAT;
       if (pinvoke && treatPInvokeAsError)
         return ERROR_PINVOKE;
+      if (warning)
+        return ERROR_WARNING;
 
       return 0; // a-ok
     }
@@ -381,19 +452,25 @@ namespace Compat
         if (fref != null)
         {
           var fdef = fref.Resolve();
-          return Utils.IsFieldAccessible(fdef, calling_type);
+          if (checkAccess)
+            return Utils.IsFieldAccessible(fdef, calling_type);
+          return fdef != null;
         }
         var mref = operand as MethodReference;
         if (mref != null)
         {
           var mdef = mref.Resolve();
-          return Utils.IsMethodAccessible(mdef, calling_type);
+          if (checkAccess)
+            return Utils.IsMethodAccessible(mdef, calling_type);
+          return mdef != null;
         }
         var tref = operand as TypeReference;
         if (tref != null)
         {
           var tdef = tref.Resolve();
-          return Utils.IsTypeAccessible(tdef, calling_type);
+          if (checkAccess)
+            return Utils.IsTypeAccessible(tdef, calling_type);
+          return tdef != null;
         }
       }
       catch (AssemblyResolutionException)
@@ -432,90 +509,38 @@ namespace Compat
     /// </remarks>
     static bool CheckMultidimensionalArray(Mono.Cecil.Cil.Instruction instruction, MethodDefinition method, TypeDefinition type, IMetadataScope scope)
     {
-      var processor = method.Body.GetILProcessor();
-      foreach (var pattern in Patterns)
-      {
-        var m = pattern.Key.Match(instruction.Operand.ToString());
-        if (m.Success)
-        {
-          string full_name = m.Groups[1].Value;
-          logger.Debug("Attemping to reconstruct multidimensional array instruction as '{0}' with opcode '{1}'", full_name, pattern.Value.Code);
-          var asm = cache[scope.Name];
-          var tmp_type = asm.MainModule.GetType(full_name);
-          if (tmp_type == null)
-          {
-            logger.Debug("{0} not found in {1}", full_name, scope.Name);
-            return false;
-          }
-          var new_instr = processor.Create(pattern.Value, tmp_type);
-          return TryResolve(new_instr.Operand, type);
-        }
-      }
+      var methodInfo = instruction.Operand as MemberReference;
+      
+      // if it's not an array we don't need to resolve this here
+      if (methodInfo != null && methodInfo.DeclaringType != null && !methodInfo.DeclaringType.IsArray)
+        return false;
 
-      return false;
-    }
+      // ensure the declaring type and the element type are resolved and we should be good here.
+      // the below was taking out the element type via regex but we have apis to get it instead
+      return methodInfo?.DeclaringType?.GetElementType()?.Resolve() != null;
 
-    /// <summary>
-    /// Custom assembly resolver to load specified reference assemblies into the cache.
-    /// Imitates DefaultAssemblyResolver except or the version agnostic cache.
-    /// </summary>
-    class CustomAssemblyResolver : BaseAssemblyResolver
-    {
-      readonly IDictionary<string, AssemblyDefinition> cache;
+      // this fails with system types when referencing System assembly.. e.g. new string[10,10];
+      // var processor = method.Body.GetILProcessor();
+      // foreach (var pattern in Patterns)
+      // {
+      //   var m = pattern.Key.Match(instruction.Operand.ToString());
+      //   if (m.Success)
+      //   {
+      //     string full_name = m.Groups[1].Value;
+      //     logger.Debug("Attemping to reconstruct multidimensional array instruction as '{0}' with opcode '{1}'", full_name, pattern.Value.Code);
+      //     var asm = cache[scope.Name];
+      //     var tmp_type = methodInfo?.DeclaringType.GetElementType() ?? asm.MainModule.GetType(full_name);
+      //     if (tmp_type == null)
+      //     {
+      //       logger.Debug("{0} not found in {1}", full_name, scope.Name);
+      //       return false;
+      //     }
+      //     var new_instr = processor.Create(pattern.Value, tmp_type);
+      //     return TryResolve(new_instr.Operand, type);
+      //   }
+      // }
 
-      /// <summary>
-      /// Creates a Custom Assembly Resolver and preload the cache with some reference assemblies.
-      /// </summary>
-      /// <param name="paths">Paths to reference assemblies.</param>
-      public CustomAssemblyResolver(IEnumerable<string> paths)
-      {
-        cache = new Dictionary<string, AssemblyDefinition>(StringComparer.Ordinal);
-        foreach (string path in paths)
-        {
-          var assembly = AssemblyDefinition.ReadAssembly(path);
-          this.RegisterAssembly(assembly);
-        }
-      }
-
-      public override AssemblyDefinition Resolve(AssemblyNameReference name)
-      {
-        if (name == null)
-          throw new ArgumentNullException("name");
-
-        AssemblyDefinition assembly;
-        logger.Debug("Searching cache for {0}", name.Name);
-        if (cache.TryGetValue(name.Name, out assembly)) // use Name instead of FullName (see below)
-        {
-          logger.Debug("Found {0}", assembly.FullName);
-          return assembly;
-        }
-        logger.Debug("We don't care about {0}", name.Name);
-        // if it's not in the cache, it's not important!
-        throw new AssemblyResolutionException(name);
-      }
-
-      protected void RegisterAssembly(AssemblyDefinition assembly)
-      {
-        if (assembly == null)
-          throw new ArgumentNullException("assembly");
-
-        // Store assembly in cache in version agnostic way
-        // FullName = "RhinoCommon, Version=5.1.30000.16, Culture=neutral, PublicKeyToken=552281e97c755530"
-        // Name     = "RhinoCommon"
-        var name = assembly.Name.Name; // use Name as key so that versions don't matter
-        if (cache.ContainsKey(name))
-          return; // TODO: throw an error here and tell the user what's wrong
-
-        cache[name] = assembly;
-      }
-
-      /// <summary>
-      /// Gets names of assemblies loaded into resolver cache. This array is a copy (paranoid or what?!).
-      /// </summary>
-      public IDictionary<string, AssemblyDefinition> Cache
-      {
-        get { return new Dictionary<string, AssemblyDefinition>(cache); }
-      }
+      // return false;
     }
 
     /// <summary>
@@ -544,7 +569,7 @@ namespace Compat
         }
         catch (AssemblyResolutionException)
         {
-          logger.Warning("Couldn't resolve base class: {0}", type.BaseType.FullName);
+          logger.Info("Couldn't resolve base class: {0}", type.BaseType.FullName);
         }
 
         if (null != @base)
@@ -554,7 +579,8 @@ namespace Compat
           if (!cache.ContainsKey(scope.Name))
             return true;
 
-          Console.WriteLine("  Overrides ({0})", @base.FullName);
+          if (!quiet)
+            Console.WriteLine("  Overrides ({0})", @base.FullName);
 
           foreach (var method in @base.Methods)
           {
@@ -577,108 +603,13 @@ namespace Compat
       return (!failure);
     }
 
-    class Logger
-    {
-      public enum LogLevel
-      {
-        ERROR,
-        WARNING,
-        INFO,
-        DEBUG
-      }
-
-      public LogLevel Level = LogLevel.DEBUG;
-
-      public void Debug(string format, params object[] args)
-      {
-        if (Level >= LogLevel.DEBUG)
-          Console.WriteLine("DEBUG " + format, args);
-      }
-
-      public void Info(string format, params object[] args)
-      {
-        if (Level >= LogLevel.INFO)
-          Console.WriteLine(format, args);
-      }
-
-      public void Warning(string format, params object[] args)
-      {
-        if (Level >= LogLevel.WARNING)
-          WriteLine(string.Format(format, args), ConsoleColor.DarkYellow);
-      }
-
-      public void Error(string format, params object[] args)
-      {
-        if (Level >= LogLevel.ERROR)
-          WriteLine(string.Format(format, args), ConsoleColor.Red);
-      }
-
-      void WriteLine(string message, ConsoleColor color)
-      {
-        Console.ForegroundColor = color;
-        try
-        {
-          Console.WriteLine(message);
-        }
-        finally
-        {
-          Console.ResetColor();
-        }
-      }
-    }
-
-    enum ResolutionStatus
+    public enum ResolutionStatus
     {
       Success,
       Failure,
       Skipped,
-      PInvoke
-    }
-
-    static class Pretty
-    {
-      static public void Class(string format, params object[] args)
-      {
-        WriteColor(format, args, ConsoleColor.Magenta);
-      }
-
-      static public void Method(string format, params object[] args)
-      {
-        WriteColor("  " + format, args, ConsoleColor.DarkCyan);
-      }
-
-      static public void Instruction(ResolutionStatus status, string scope, string format, params object[] args)
-      {
-        string indent = "    ";
-        format += " < " + scope;
-        if (status == ResolutionStatus.Success)
-        {
-          if (!quiet)
-            WriteColor(indent + "\u2713 PASS " + format, args, ConsoleColor.Green);
-        }
-        else if (status == ResolutionStatus.Failure)
-          WriteColor(indent + "\u2717 FAIL " + format, args, ConsoleColor.Red);
-        else if (status == ResolutionStatus.PInvoke)
-          WriteColor(indent + "\u2192 PINV " + format, args, ConsoleColor.DarkYellow);
-        else // skipped
-        {
-          if (!quiet)
-            WriteColor(indent + "\u271D SKIP " + format, args, ConsoleColor.Gray);
-        }
-      }
-
-      static void WriteColor(string format, object[] args, ConsoleColor color)
-      {
-        Console.ForegroundColor = color;
-        try
-        {
-          Console.WriteLine(format, args);
-        }
-        finally
-        {
-          Console.ResetColor();
-        }
-      }
+      PInvoke,
+      Warning
     }
   }
 }

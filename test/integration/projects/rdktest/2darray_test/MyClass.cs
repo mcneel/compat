@@ -1,5 +1,6 @@
 ﻿using System;
 using Rhino.Geometry;
+using System.Collections.Generic;
 
 namespace darray_test
 {
@@ -46,6 +47,35 @@ namespace darray_test
       arr[0, 1] = Mesh.CreateFromSphere(new Sphere(), 10, 10);
       var m = arr[0, 0];
       return m.Scale(2);
+    }
+    
+    string StringArray()
+    {
+      var arr = new string[10, 20, 30];
+      arr[0, 0, 0] = "woot";
+      return arr[0, 0, 0];
+    }
+    
+
+    List<string> UseGenericsWithArrays()
+    {
+      var arr = new List<string>[10, 20];
+      arr[0, 0] = new List<string>();
+      return arr[0, 0];
+    }
+    
+    List<Point3d> UseGenericsWithArraysPoint3d()
+    {
+      var arr = new List<Point3d>[10, 20];
+      arr[0, 0] = new List<Point3d>();
+      return arr[0, 0];
+    }
+    
+    ValueTuple<System.Version, System.Version> UseSystem()
+    {
+      var vers = new ValueTuple<System.Version, System.Version>[10, 10];
+      vers[0, 0] = new ValueTuple<System.Version, System.Version>(new Version(), new Version());
+      return vers[0, 0];
     }
   }
 }

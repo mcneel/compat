@@ -1,43 +1,8 @@
 #!/usr/bin/env bash
 
-# script/test: Run test suite for application. Optionally pass in a path to an
-#              individual test file to run a single test.
+# script/test: Run test suite for application. Optionally pass in filters for testing
+#              e.g. --filter "FullyQualifiedName~AccessTests"
 
-set -e
+BASE_DIR="$(dirname "$0")/.."
 
-cd "$(dirname "$0")/.."
-export COMPAT_ROOT=$(pwd)
-
-function run_bats() {
-  for bats_file in $(find $1 -name \*.bats); do
-    echo "==> $bats_file"
-    echo
-
-    # BATS returns non-zero to indicate the tests have failed, we shouldn't
-    # necessarily bail in this case, so that's the reason for the e toggle.
-    set +e
-    if [ $CI ]; then
-      bats --tap "$bats_file"
-    else
-      bats "$bats_file"
-    fi
-    if [[ $? -ne 0 ]]; then
-      EXIT_STATUS=1
-    fi
-    set -e
-
-    echo
-  done
-}
-
-BATS_FILE="test/integration"
-
-if [ $1 ]; then
-  if [[ $1 =~ ^integration.* ]]; then
-      BATS_FILE="test/$1*"
-  fi
-fi
-
-run_bats "$BATS_FILE"
-
-exit ${EXIT_STATUS}
+dotnet test $BASE_DIR/src/CompatTests/CompatTests.csproj $@

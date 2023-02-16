@@ -5,40 +5,28 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <UseAppHost>False</UseAppHost>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <OutputPath>$(RhinoOutputDir)</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48;net7.0-windows</TargetFrameworks>
+    <OutputPath>$(RhinoOutputDir)</OutputPath>
+    <OutputPath Condition="$(TargetFramework) == 'net7.0-windows'">$(OutputPath)netcore\</OutputPath>
+    <UseWindowsForms Condition="$(TargetFramework) == 'net7.0-windows'">true</UseWindowsForms>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and !$(TargetFramework.StartsWith('net4'))">
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RuntimeFrameworkVersion>7.0.0</RuntimeFrameworkVersion>
+    <RollForward>LatestMinor</RollForward>
   </PropertyGroup>
   <PropertyGroup>
+    <IntermediateOutputPath>obj\$(OS)\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
-    <EnableDefaultItems>False</EnableDefaultItems>
     <Deterministic>False</Deterministic>
 
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Compat</RootNamespace>
     <AssemblyName>Compat</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>$(RhinoBinDir)\$(Configuration)\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;MANUAL_ASSEMBLY_VERSION</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>$(RhinoBinDir)\$(Configuration)\</OutputPath>
-    <DefineConstants>TRACE;MANUAL_ASSEMBLY_VERSION</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System" />
@@ -48,25 +36,24 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0-macos" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Utils.cs" />
+    <Compile Remove="Properties\AssemblyInfo.cs" />
     <Compile Include="$(RhinoSrcDir)\version.cs">
       <Link>Properties\version.cs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
-    <None Include="App.config" />
-  </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
@@ -76,5 +63,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+  </ItemGroup>
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="System.Security.Permissions" Version="7.0.0" />
+    <PackageReference Include="System.CodeDom" Version="7.0.0" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="7.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
   </ItemGroup>
 </Project>

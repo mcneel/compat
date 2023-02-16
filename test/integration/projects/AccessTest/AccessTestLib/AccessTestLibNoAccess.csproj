@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+    <NoWarn>CS0649;CS0169</NoWarn>
+    <AssemblyName>AccessTestLib</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\$(Configuration)\$(TargetFramework)\noaccess</OutputPath>
+    <IntermediateOutputPath>obj\noaccess\$(OS)\$(Configuration)\$(TargetFramework)</IntermediateOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**</DefaultItemExcludes>
+    <DefineConstants>ACCESS</DefineConstants>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+</Project>

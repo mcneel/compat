@@ -1,40 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0E13564D-8B5D-49EC-9AF3-C9B36794AE8A}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>rdktest_abstract</RootNamespace>
-    <AssemblyName>rdktest_abstract</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <TargetFramework>net45</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="RhinoCommon">
-      <HintPath>..\..\..\lib\rhino_en-us_6.0.16176.11441\RhinoCommon.dll</HintPath>
-    </Reference>
+    <Reference Include="..\..\..\lib\rhino_en-us_6.0.16176.11441\RhinoCommon.dll" Private="false" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="MyClass.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

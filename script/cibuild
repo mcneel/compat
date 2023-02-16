@@ -16,7 +16,7 @@ if [ $CI ]; then
 fi
 
 # build
-msbuild /p:Configuration=Release src/Compat.sln
+dotnet build -c Release src/Compat.sln
 
 # test
 script/test

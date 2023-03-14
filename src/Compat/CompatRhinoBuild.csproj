@@ -29,6 +29,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Compat</RootNamespace>
     <AssemblyName>Compat</AssemblyName>
+    <SelfContained>False</SelfContained>
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System" />

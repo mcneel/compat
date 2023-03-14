@@ -9,6 +9,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
     <TargetFrameworks>net48;net7.0-windows</TargetFrameworks>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
     <OutputPath Condition="$(TargetFramework) == 'net7.0-windows'">$(OutputPath)netcore\</OutputPath>
     <UseWindowsForms Condition="$(TargetFramework) == 'net7.0-windows'">true</UseWindowsForms>
@@ -22,6 +23,7 @@
     <IntermediateOutputPath>obj\$(OS)\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
     <Deterministic>False</Deterministic>
 
     <OutputType>Exe</OutputType>

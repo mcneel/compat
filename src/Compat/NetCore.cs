@@ -6,6 +6,8 @@ namespace Compat
 {
   partial class Program
   {
+    static string RhinoPublicKey = "552281e97c755530";
+
     public class NetCore
     {
       static Dictionary<string, Dictionary<string, ResolutionStatus>> _netCoreExceptionApis;
@@ -31,7 +33,7 @@ namespace Compat
       /// List of public key tokens for assemblies to only give warnings for
       /// </summary>
       public static readonly HashSet<string> IgnorePublicKeys = new HashSet<string> {
-        "552281e97c755530", // All Rhino assemblies
+        RhinoPublicKey, // All Rhino assemblies
       };
 
       /// <summary>

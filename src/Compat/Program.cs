@@ -139,7 +139,7 @@ namespace Compat
       bool isIgnoreAssembly = false;
       if (token != null)
       {
-        var tokenName = token.Aggregate(string.Empty, (s, b) => s += b.ToString("x2", CultureInfo.InvariantCulture));
+        var tokenName = GetPublicKeyTokenName(token);
         if (NetCore.IgnorePublicKeys.Contains(tokenName))
           isIgnoreAssembly = true;
 
@@ -189,6 +189,9 @@ namespace Compat
       // print assembly name
       logger.Warning("{0}\n", module.Assembly.FullName);
 
+      Version rhinoCommonVersion = null;
+      Version rhinoDotNetVersion = null;
+
       // print assembly references (buildtime)
       if (module.AssemblyReferences.Count > 0)
       {
@@ -196,6 +199,14 @@ namespace Compat
         foreach (AssemblyNameReference reference in module.AssemblyReferences)
         {
           logger.Info("  {0}", reference.FullName);
+          if (reference.Name == "RhinoCommon" && GetPublicKeyTokenName(reference.PublicKeyToken) == RhinoPublicKey)
+          {
+            rhinoCommonVersion = reference.Version;
+          }
+          if (reference.Name == "Rhino_DotNet" && GetPublicKeyTokenName(reference.PublicKeyToken) == RhinoPublicKey)
+          {
+            rhinoDotNetVersion = reference.Version;
+          }
         }
       }
       logger.Info("");
@@ -219,6 +230,18 @@ namespace Compat
       bool isMixed = (module.Attributes & ModuleAttributes.ILOnly) != ModuleAttributes.ILOnly;
       logger.Info("Mixed-mode? {0}\n", isMixed);
 
+
+      // RH-34686: If a mixed-mode assembly, fail if specific types exist as it likely references an old C++ sdk
+      // wfcook RH-60405 14-Sep-2020: If plugin version >= 6 we don't need to check because we 
+      // haven't broken the sdk.
+      string[] invalidTypes = null;
+      if (isMixed && !(rhinoCommonVersion?.Major >= 6 || rhinoDotNetVersion?.Major >= 6))
+      {
+        // if we find any classes with the following prefixes, odds are the assembly references the rhino c++ sdk
+        // we can't check for compatibility with the c++ sdk so the plug-in fails the compatibility check
+        invalidTypes = new [] { "CRhino", "ON_" };
+      }
+
       // global failure/pinvoke trackers for setting return code
       bool failure = false;
       bool warning = false;
@@ -232,13 +255,26 @@ namespace Compat
         foreach (TypeDefinition type in types)
         {
           if (!quiet)
-            Pretty.Class("{0}", type.FullName);
+            Pretty.Class(type.FullName);
+
+          if (invalidTypes != null)
+          {
+            foreach (var prefix in invalidTypes)
+            {
+              if (type.FullName.StartsWith(prefix, StringComparison.Ordinal))
+              {
+                // fail!
+                Pretty.WriteStatus(ResolutionStatus.Failure, $"{type.FullName} is using an obsolete C++ SDK");
+                failure = true;
+              }
+            }
+          }
 
           // iterate over all the METHODS that have a method body
           foreach (MethodDefinition method in type.Methods)
           {
             if (!quiet)
-              Pretty.Method("{0}", method.FullName);
+              Pretty.Method(method.FullName);
               
             if (!method.HasBody) // skip if no body
               continue;
@@ -292,7 +328,7 @@ namespace Compat
                   Pretty.Instruction(ResolutionStatus.Skipped, scope.Name, instructionString);
                   continue;
                 }
-                
+
                 logger.Debug("{0} is on the list so let's try to resolve it", scope.Name);
                 logger.Debug(instruction.Operand.ToString());
                 // try to resolve operand
@@ -338,6 +374,11 @@ namespace Compat
         return ERROR_WARNING;
 
       return 0; // a-ok
+    }
+
+    private static string GetPublicKeyTokenName(byte[] token)
+    {
+      return token?.Aggregate(string.Empty, (s, b) => s += b.ToString("x2", CultureInfo.InvariantCulture));
     }
 
     /// <summary>

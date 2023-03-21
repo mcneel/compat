@@ -36,4 +36,11 @@ public class ThirdPartyTests : TestBase
     Assert.That(result.ExitCode, Is.Not.EqualTo(Compat.Program.ERROR_COMPAT));
     Warn.If(result.ExitCode, Is.EqualTo(Compat.Program.ERROR_WARNING));
   }
+
+  //[Test]
+  //[TestCase("Enscape", @"z:\Downloads\Enscape\Bin64")]
+  //[TestCase("IRay", @"z:\Downloads\Clayoo_and_iRay\Rhino_IRAY_Plugin")]
+  public Task TestSinglePackage(string name, string path) => 
+    TestPackage(new DirectoryPackageSource(name, path));
+
 }

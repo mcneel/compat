@@ -145,6 +145,9 @@ namespace Compat
 
         if (NetCore.IgnoreAssemblies.Contains((assemblyName.Name, tokenName)))
           isIgnoreAssembly = true;
+
+        if (NetCore.RunningInNetCore && NetCore.IgnoreNetCoreAssemblies.Contains((assemblyName.Name, tokenName)))
+          isIgnoreAssembly = true;
       }
 
       // load module and assembly resolver
@@ -376,7 +379,7 @@ namespace Compat
       return 0; // a-ok
     }
 
-    private static string GetPublicKeyTokenName(byte[] token)
+    internal static string GetPublicKeyTokenName(byte[] token)
     {
       return token?.Aggregate(string.Empty, (s, b) => s += b.ToString("x2", CultureInfo.InvariantCulture));
     }

@@ -17,6 +17,7 @@ namespace CompatTests.Util
   {
     Package _package;
     YakClient _yak;
+
     public YakPackageSource(YakClient yak, Package package)
     {
       _yak = yak;
@@ -45,9 +46,12 @@ namespace CompatTests.Util
     public override string ToString() => _package.Name;
   }
 
-  public class YakSource : IEnumerable
+  public class YakSource : BaseSource
   {
     static string YakUrl = "https://yak.rhino3d.com/";
+    public YakSource() : base("yak")
+    {
+    }
 
     internal static YakClient CreateYakClient(string name = "compat_tests", bool strict = false)
     {
@@ -57,44 +61,36 @@ namespace CompatTests.Util
       foreach (var s in source_strs)
       {
         // TODO: pass strict somehow.
-        sources.Add(PackageRepositoryFactory.Create(s, new HttpClient(), pinfo));
+        var source = PackageRepositoryFactory.Create(s, new HttpClient(), pinfo);
+        
+        // allow downloading v7 packages
+        if (source is ApiPackageRepository apiSource)
+          apiSource.Strict = strict;
+        
+        sources.Add(source);
       }
       var yak = new YakClient(sources.ToArray());
       return yak;
     }
 
-
-    public IEnumerator GetEnumerator() => Get().GetEnumerator();
-
-    public static IEnumerable<IPackageSource> Get()
+    public override async IAsyncEnumerable<IPackageSource> GetPackages()
     {
-      var packageFolder = Path.Combine(AppContext.BaseDirectory, "yak", TestBase.OSName);
+      var strict = false;
+      var yak = CreateYakClient(strict: strict);
+      yak.PackageFolder = OutputPath;
 
-      // already downloaded packages? cool, let's not do it again.
-      if (Directory.Exists(packageFolder) && Directory.EnumerateFiles(packageFolder, "*.*", SearchOption.AllDirectories).Any())
-        return DirectorySource.Get(packageFolder, false);
-
-      var list = new List<IPackageSource>();
-      Task.Run(async () =>
+      foreach (var package in await yak.Package.GetAll())
       {
-        var strict = false;
-        var yak = CreateYakClient(strict: strict);
-        yak.PackageFolder = packageFolder;
+        var ver = await yak.Version.Get(package.Name, package.Version);
 
-        foreach (var package in await yak.Package.GetAll())
-        {
-          var ver = await yak.Version.Get(package.Name, package.Version);
+        var dist = ver.Distributions.FirstOrDefault(d => d.IsCompatible(strict));
 
-          var dist = ver.Distributions.FirstOrDefault(d => d.IsCompatible(strict));
+        // no compatible distribution, go to next.
+        if (dist == null)
+          continue;
 
-          // no compatible distribution, go to next.
-          if (dist == null)
-            continue;
-
-          list.Add(new YakPackageSource(yak, package));
-        }
-      }).GetAwaiter().GetResult();
-      return list;
+        yield return new YakPackageSource(yak, package);
+      }
     }
   }
 }

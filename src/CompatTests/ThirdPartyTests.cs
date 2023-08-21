@@ -1,9 +1,12 @@
 using CompatTests.Util;
+using System.Collections;
 
 namespace CompatTests;
 
 public class ThirdPartyTests : TestBase
 {
+  string ResultsPath => Path.Combine(AppContext.BaseDirectory, "results", OSName);
+
   [Test]
   [TestCaseSource(typeof(YakSource))]
   //[TestCaseSource(typeof(DirectorySource), nameof(DirectorySource.Get), new object[] { "yak", true })]
@@ -16,19 +19,33 @@ public class ThirdPartyTests : TestBase
 
   async Task TestPackage(IPackageSource package)
   {
+    var resultsPath = ResultsPath;
+    var resultsFileName = Path.Combine(resultsPath, package.Name + ".txt");
+    
+    // clear out old results
+    if (File.Exists(resultsFileName))
+      File.Delete(resultsFileName);
+
+    resultsFileName = Path.Combine(resultsPath, "warn", package.Name + ".txt");
+    if (File.Exists(resultsFileName))
+      File.Delete(resultsFileName);
+
     var packagePath = await package.Download();
 
-    var rhinoCommon = GetRhinoCommon("rhino_en-us_8.0.23045.12305");
+    var rhinoCommon = GetRhinoCommon("rhino_en-us_8.0.23206.14395");
 
     var result = RunCompatCheck(packagePath, new[] { rhinoCommon }, quiet: true, includeSystemAssemblies: true);
 
     if (result.ExitCode != 0)
-    {
-      var resultsPath = Path.Combine(AppContext.BaseDirectory, "results", OSName);
+    { 
+      if (result.ExitCode != Compat.Program.ERROR_COMPAT)
+        resultsPath = Path.Combine(resultsPath, "warn");
+
       if (!Directory.Exists(resultsPath))
         Directory.CreateDirectory(resultsPath);
-      resultsPath = Path.Combine(resultsPath, package.Name + ".txt");
-      File.WriteAllText(resultsPath, result.Output);
+
+      resultsFileName = Path.Combine(resultsPath, package.Name + ".txt");
+      File.WriteAllText(resultsFileName, result.Output);
 
       Console.WriteLine(result.Output);
     }
@@ -36,6 +53,16 @@ public class ThirdPartyTests : TestBase
     Assert.That(result.ExitCode, Is.Not.EqualTo(Compat.Program.ERROR_COMPAT));
     Warn.If(result.ExitCode, Is.EqualTo(Compat.Program.ERROR_WARNING));
   }
+
+  [Test]
+  [TestCase(typeof(YakSource))]
+  [TestCase(typeof(Food4RhinoSource))]
+  public async Task DownloadPackages(Type type)
+  {
+    var source = (BaseSource)Activator.CreateInstance(type);
+    await source.DownloadAll();
+  }
+
 
   //[Test]
   //[TestCase("Enscape", @"z:\Downloads\Enscape\Bin64")]

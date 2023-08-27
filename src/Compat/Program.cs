@@ -313,7 +313,7 @@ namespace Compat
                 }
                 
                 // is it a .NET Core API pass its specific status.
-                if (NetCore.NetCoreExceptionApis.TryGetValue(scope.Name, out var apis) && apis.TryGetValue(instructionString, out var status))
+                if (NetCore.RunningInNetCore && NetCore.NetCoreExceptionApis.TryGetValue(scope.Name, out var apis) && apis.TryGetValue(instructionString, out var status))
                 {
                   Pretty.Instruction(status, scope.Name, instructionString);
 

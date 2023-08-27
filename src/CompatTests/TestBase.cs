@@ -87,6 +87,8 @@ public class TestBase
             if (exitCode == 0)
               exitCode = code;
 
+            output.WriteLine($"Exit Code: {code}");
+
             output.WriteLine();
           }
         }

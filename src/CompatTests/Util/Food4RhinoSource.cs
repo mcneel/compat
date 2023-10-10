@@ -16,7 +16,8 @@ namespace CompatTests.Util
   public class Food4RhinoSource : BaseSource
   {
     const string BaseUrl = "https://www.food4rhino.com";
-    const string RhinoPackagesQuery = "/en/browse?sort_by=ss_node_title&items_per_page=100&f%5B0%5D=im_field_unified_type%3A773&f%5B1%5D=im_field_platform_app%3A722";
+    //const string RhinoPackagesQuery = "/en/browse?sort_by=ss_node_title&items_per_page=100&f%5B0%5D=im_field_unified_type%3A773&f%5B1%5D=im_field_platform_app%3A722";
+    const string RhinoPackagesQuery = "/en/browse?sort_by=ss_node_title&items_per_page=100&f%5B0%5D=im_field_unified_type%3A773";
 
 
     /* f4r requires users to log in before downloading anything
@@ -28,7 +29,7 @@ namespace CompatTests.Util
      * Change this string with the new values.
      */
     const string AuthCookieName = "SSESS9487ea0fb540f9ff81f1888d4c131955";
-    const string AuthCookieValue = "bFw5VkqeC4uYFE-6cFSXkXQ2j6PDgwGGmIshdlTgN0I";
+    const string AuthCookieValue = "CDdn11cc0SfF1bjrf1x3Di3J2H1V10HQwLyOJ4DFJvU";
 
     public Food4RhinoSource() : base("f4r")
     {
@@ -50,7 +51,7 @@ namespace CompatTests.Util
       public string Url { get; }
       public string Id { get; }
 
-      static string[] AllowedExtensions = { ".rhi", ".zip", ".exe" };
+      static string[] AllowedExtensions = { ".rhi", ".zip", ".exe", ".gha" };
 
       public async Task<string> Download()
       {
@@ -129,16 +130,17 @@ namespace CompatTests.Util
           var fileName = item.url.Substring(item.url.LastIndexOf('/') + 1);
 
 
-          var destPath = Path.Combine(outputPath, fileName);
+          var destFile = Path.Combine(outputPath, fileName);
 
-          //if (!Directory.Exists(outputPath))
-          //  Directory.CreateDirectory(outputPath);
+          if (!Directory.Exists(outputPath))
+            Directory.CreateDirectory(outputPath);
 
-          if (File.Exists(destPath))
-            continue;
+          if (File.Exists(destFile))
+            break;
 
 
           Console.WriteLine($"Downloading {item.url}");
+          Debug.WriteLine($"Downloading {item.url}");
           // need to feed f4r a cookie to give us the plugin
           var downloadRequest = new HttpRequestMessage(HttpMethod.Get, item.url);
           downloadRequest.Headers.Add("Referer", pluginUrl);
@@ -147,30 +149,52 @@ namespace CompatTests.Util
           if (downloadResult.IsSuccessStatusCode)
           {
             var stream = await downloadResult.Content.ReadAsStreamAsync();
-            using (var fileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write))
+            using (var fileStream = new FileStream(destFile, FileMode.Create, FileAccess.Write))
             {
               stream.CopyTo(fileStream);
             }
 
-            var zipDir = Path.Combine(outputPath, Path.GetFileNameWithoutExtension(destPath));
+            var zipDir = Path.Combine(outputPath, Path.GetFileNameWithoutExtension(destFile));
             if (!Directory.Exists(zipDir))
               Directory.CreateDirectory(zipDir);
             try
             {
-              ZipFile.ExtractToDirectory(destPath, zipDir);
+              ZipFile.ExtractToDirectory(destFile, zipDir);
+
+              foreach (var childExt in AllowedExtensions)
+              {
+                // if the file was a .zip containing any .rhi's, extract them too
+                foreach (var childFile in Directory.GetFiles(zipDir, "*" + childExt, SearchOption.AllDirectories))
+                {
+                  var childDir = Path.Combine(zipDir, Path.GetFileNameWithoutExtension(childFile));
+                  if (!Directory.Exists(childDir))
+                    Directory.CreateDirectory(childDir);
+
+                  try
+                  {
+                    ZipFile.ExtractToDirectory(childFile, childDir);
+                  }
+                  catch (Exception ex)
+                  {
+                    // not a zip file?
+                    Debug.WriteLine($"ERROR: Couldn't unzip {childFile}. {ex}");
+                  }
+                }
+              }
             }
-            catch
+            catch (Exception ex)
             {
+              Debug.WriteLine($"ERROR: Couldn't unzip {destFile}. {ex}");
               // not a zip file?
             }
           }
           else
           {
             // for some reason it keeps getting forbidden.. /:
-            Console.WriteLine($"ERROR: Couldn't download {fileName}. {downloadResult}");
+            Debug.WriteLine($"ERROR: Couldn't download {fileName}. {downloadResult}");
           }
           // so we don't hammer the server
-          await Task.Delay(2000);
+          await Task.Delay(1000);
 
 
         }

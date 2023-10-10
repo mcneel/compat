@@ -10,16 +10,24 @@ namespace CompatTests.Util
     public BaseSource(string id, bool useRemoteSource = false)
     {
       Id = id;
-      OutputPath = Path.Combine(AppContext.BaseDirectory, "..", Id, TestBase.OSName);
+      OutputPath = Path.Combine(TestBase.GetRootDir(), "packages", Id, TestBase.OSName);
       UseRemoteSource = useRemoteSource;
     }
+
 
     public string OutputPath { get; set; }
     public virtual async Task DownloadAll()
     {
       await foreach (var source in GetPackages())
       {
-        await source.Download();
+        try
+        {
+          await source.Download();
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Warn package '{source.Name}': {ex}");
+        }
       }
     }
 

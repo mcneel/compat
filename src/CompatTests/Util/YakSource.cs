@@ -36,8 +36,8 @@ namespace CompatTests.Util
       // only download/install if it doesn't already exist
       if (!Directory.Exists(outputPath))
       {
-        var tempPath = await _yak.Version.Download(_package.Name, _package.Version);
-        _yak.Install(tempPath, out var manifest);
+          var tempPath = await _yak.Version.Download(_package.Name, _package.Version);
+          _yak.Install(tempPath, out var manifest);
       }
 
       return outputPath;

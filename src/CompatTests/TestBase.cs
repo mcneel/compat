@@ -1,5 +1,7 @@
 namespace CompatTests;
 
+using Compat;
+using Microsoft.Win32;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -9,6 +11,32 @@ public class TestBase
   public static string TestPath => testPath ?? (testPath = GetTestPath());
 
   public static string OSName => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win" : "mac";
+
+  static string? s_rootDir;
+  public static string GetRootDir()
+  {
+    if (s_rootDir == null)
+    {
+      string? path = null;
+      if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        path = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}", String.Empty).ToString();
+
+      if (!string.IsNullOrEmpty(path))
+      {
+        path = Path.Combine(path, "compat-tests");
+      }
+      else
+      {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && dir.Name != "src")
+          dir = dir.Parent;
+        path = dir?.Parent?.FullName;
+      }
+
+      s_rootDir = path ?? Path.Combine(AppContext.BaseDirectory, "..");
+    }
+    return s_rootDir;
+  }
 
   public static string GetTestPath()
   {
@@ -23,7 +51,8 @@ public class TestBase
     return Path.Combine(dir.FullName, "test", "integration");
   }
 
-  public static string[] AssemblyExtensions = new [] { "*.rhp", "*.gha", "*.dll" };
+  public static string[] PluginExtensions = new[] { "*.rhp", "*.gha" };
+  public static string[] AssemblyExtensions = new[] { "*.rhp", "*.gha", "*.dll" };
 
   public static (int ExitCode, string Output) RunCompatCheck(string pluginPath, string[] referenceAssemblies, bool quiet = false, bool checkAccess = false, bool includeSystemAssemblies = false, bool treatPInvokeAsError = false)
   {
@@ -59,6 +88,8 @@ public class TestBase
 
       string pluginDirectory;
 
+      var testCount = 0;
+
       if (File.Exists(pluginPath))
       {
         pluginDirectory = Path.GetDirectoryName(pluginPath)!;
@@ -66,9 +97,12 @@ public class TestBase
         // test main plugin assembly
         var asmArgs = args.Concat(new[] { pluginPath }).Concat(referenceAssemblies);
         exitCode = Compat.Program.Main(asmArgs.ToArray());
+        testCount++;
       }
       else
         pluginDirectory = pluginPath;
+
+
 
       // Test all other assemblies in the same path
       if (Directory.Exists(pluginPath))
@@ -84,14 +118,21 @@ public class TestBase
             var asmArgs = args.Concat(new[] { dll }).Concat(referenceAssemblies);
             
             var code = Compat.Program.Main(asmArgs.ToArray());
-            if (exitCode == 0)
+            if (exitCode == 0 || exitCode == Program.ERROR_WARNING || exitCode == Program.ERROR_NOT_DOTNET)
               exitCode = code;
 
             output.WriteLine($"Exit Code: {code}");
 
             output.WriteLine();
+            testCount++;
           }
         }
+      }
+
+      if (testCount == 0)
+      {
+        output.WriteLine("Could not find any assemblies to test!");
+        exitCode = -1;
       }
       
       var outputString = output.ToString();

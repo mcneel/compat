@@ -42,7 +42,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0-macos" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -65,7 +65,12 @@
     <None Include="Resources\Version.txt" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <!-- Always use netstandard2.0 version of Mono.Cecil, not net40 -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.dll" />
+    <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Mdb.dll" />
+    <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Pdb.dll" />
+    <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Rocks.dll" />
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.Security.Permissions" Version="7.0.0" />

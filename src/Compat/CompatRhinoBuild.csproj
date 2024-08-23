@@ -42,7 +42,8 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" PrivateAssets="all" />
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" Private="False" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.Primitives.csproj" Private="False" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

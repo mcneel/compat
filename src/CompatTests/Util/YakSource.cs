@@ -17,6 +17,7 @@ namespace CompatTests.Util
   {
     Package _package;
     YakClient _yak;
+    bool _strict = false;
 
     public YakPackageSource(YakClient yak, Package package)
     {
@@ -36,7 +37,7 @@ namespace CompatTests.Util
       // only download/install if it doesn't already exist
       if (!Directory.Exists(outputPath))
       {
-          var tempPath = await _yak.Version.Download(_package.Name, _package.Version);
+          var tempPath = await _yak.Version.Download(_package.Name, _package.Version, _strict, null, CancellationToken.None);
           _yak.Install(tempPath, out var manifest);
       }
 
@@ -53,19 +54,14 @@ namespace CompatTests.Util
     {
     }
 
-    internal static YakClient CreateYakClient(string name = "compat_tests", bool strict = false)
+    internal static YakClient CreateYakClient(string name = "compat_tests")
     {
       var pinfo = new ProductHeaderValue(name);
       var source_strs = YakUrl.Split(';');
       var sources = new List<IPackageRepository>();
       foreach (var s in source_strs)
       {
-        // TODO: pass strict somehow.
         var source = PackageRepositoryFactory.Create(s, new HttpClient(), pinfo);
-        
-        // allow downloading v7 packages
-        if (source is ApiPackageRepository apiSource)
-          apiSource.Strict = strict;
         
         sources.Add(source);
       }
@@ -76,7 +72,7 @@ namespace CompatTests.Util
     public override async IAsyncEnumerable<IPackageSource> GetPackages()
     {
       var strict = false;
-      var yak = CreateYakClient(strict: strict);
+      var yak = CreateYakClient();
       yak.PackageFolder = OutputPath;
 
       foreach (var package in await yak.Package.GetAll())

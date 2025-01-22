@@ -67,7 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Always use netstandard2.0 version of Mono.Cecil, not net40 -->
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" GeneratePathProperty="true" ExcludeAssets="all" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6-rhino" GeneratePathProperty="true" ExcludeAssets="all" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.dll" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Mdb.dll" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Pdb.dll" />

@@ -8,7 +8,7 @@ namespace CompatTests.Util
     public DirectoryPackageSource(string name, string path)
     {
       Name = name;
-      Path = path;
+      Path = Environment.ExpandEnvironmentVariables(path);
     }
 
     public string Name { get; }

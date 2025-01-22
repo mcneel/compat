@@ -28,7 +28,7 @@ public class ThirdPartyTests : TestBase
     Installer_Only
   }
 
-  async Task TestPackage(IPackageSource package, string subdir)
+  async Task TestPackage(IPackageSource package, string subdir, string rhinoCommonPath = null)
   {
     var resultsPath = Path.Combine(ResultsPath, subdir);
 
@@ -44,7 +44,7 @@ public class ThirdPartyTests : TestBase
 
     var packagePath = await package.Download();
 
-    var rhinoCommon = GetRhinoCommon("rhino_en-us_8.0.23206.14395");
+    var rhinoCommon = rhinoCommonPath ?? GetRhinoCommon("rhino_en-us_8.0.23206.14395");
 
     var result = RunCompatCheck(packagePath, new[] { rhinoCommon }, quiet: true, includeSystemAssemblies: true);
 
@@ -84,10 +84,11 @@ public class ThirdPartyTests : TestBase
   }
 
 
-  //[Test]
-  //[TestCase("Enscape", @"z:\Downloads\Enscape\Bin64")]
-  //[TestCase("IRay", @"z:\Downloads\Clayoo_and_iRay\Rhino_IRAY_Plugin")]
-  public Task TestSinglePackage(string name, string path) => 
-    TestPackage(new DirectoryPackageSource(name, path), "single");
+  // [TestCase("Enscape", @"z:\Downloads\Enscape\Bin64")]
+  // [TestCase("GH2", 
+  //   @"%APPDATA%\McNeel\Rhinoceros\packages\8.0\Grasshopper2\2.0.9040-wip.38379+b5994c78bcff7d30070103a97d764f79221247af",
+  //   "C:\\Program Files\\Rhino 9 WIP\\System\\netcore\\RhinoCommon.dll")]
+  public Task TestSinglePackage(string name, string path, string rhinoCommonPath) => 
+    TestPackage(new DirectoryPackageSource(name, path), "single", rhinoCommonPath);
 
 }

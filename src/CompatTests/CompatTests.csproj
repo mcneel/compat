@@ -7,11 +7,11 @@
     <NoWarn>NU1702</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(windows))">
-    <TargetFrameworks>net48;net7.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(osx))">
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compat\Compat.csproj" />
@@ -27,10 +27,10 @@
     <ProjectReference Include="..\..\test\integration\projects\PInvokeExample\PInvokeExample\PInvokeExample.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(osx))">
-    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0-macos" />
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net9.0-macos" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework) == 'net48'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
   <ItemGroup>
@@ -40,9 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.0.4" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="NUnit.Analyzers" Version="3.6.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

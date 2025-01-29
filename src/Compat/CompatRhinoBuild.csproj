@@ -1,22 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\..\..\RhinoProjectPropertySheets\Rhino.Common.props" />
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <UseAppHost>False</UseAppHost>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
-    <TargetFrameworks>net48;net7.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
-    <OutputPath Condition="$(TargetFramework) == 'net7.0-windows'">$(OutputPath)netcore\</OutputPath>
-    <UseWindowsForms Condition="$(TargetFramework) == 'net7.0-windows'">true</UseWindowsForms>
+    <OutputPath Condition="$(TargetFramework) == 'net9.0-windows'">$(OutputPath)netcore\</OutputPath>
+    <UseWindowsForms Condition="$(TargetFramework) == 'net9.0-windows'">true</UseWindowsForms>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and !$(TargetFramework.StartsWith('net4'))">
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <RuntimeFrameworkVersion>7.0.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>9.0.0</RuntimeFrameworkVersion>
     <RollForward>LatestMinor</RollForward>
   </PropertyGroup>
   <PropertyGroup>
@@ -42,7 +42,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0-macos" />
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net9.0-macos" />
     <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.Primitives.csproj" />
   </ItemGroup>
   <ItemGroup>
@@ -74,12 +74,12 @@
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Rocks.dll" />
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Security.Permissions" Version="7.0.0" />
-    <PackageReference Include="System.CodeDom" Version="7.0.0" />
-    <PackageReference Include="System.Diagnostics.EventLog" Version="7.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
-    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
+    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
+    <PackageReference Include="System.CodeDom" Version="9.0.0" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
   </ItemGroup>
 </Project>

@@ -4,19 +4,19 @@
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <Deterministic>false</Deterministic>
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
-    <RuntimeFrameworkVersion>7.0.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>9.0.0</RuntimeFrameworkVersion>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(windows))">
-    <TargetFrameworks>net48;net7.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>false</SelfContained>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(osx))">
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <PropertyGroup>
@@ -34,7 +34,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0-macos" />
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net9.0-macos" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Version.txt" />
@@ -56,12 +56,12 @@
     <PackageReference Include="Mono.Cecil" Version="0.11.6-rhino" />
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Security.Permissions" Version="7.0.0" />
-    <PackageReference Include="System.CodeDom" Version="7.0.0" />
-    <PackageReference Include="System.Diagnostics.EventLog" Version="7.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="7.0.0" />
-    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
+    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
+    <PackageReference Include="System.CodeDom" Version="9.0.0" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
   </ItemGroup>
 </Project>

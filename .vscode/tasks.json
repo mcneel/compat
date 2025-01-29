@@ -42,10 +42,10 @@
             "label": "clear-results",
             "type": "shell",
             "osx": {
-                "command": "rm -rf ${workspaceFolder}/src/CompatTests/bin/Debug/net7.0/results"
+                "command": "rm -rf ${workspaceFolder}/src/CompatTests/bin/Debug/net9.0/results"
             },
             "windows": {
-                "command": "rmdir /s /q ${workspaceFolder}\\src\\CompatTests\\bin\\Debug\\net7.0-windows\\results || rmdir /s /q ${workspaceFolder}\\src\\CompatTests\\bin\\Debug\\net48\\results || echo already deleted"
+                "command": "rmdir /s /q ${workspaceFolder}\\src\\CompatTests\\bin\\Debug\\net9.0-windows\\results || rmdir /s /q ${workspaceFolder}\\src\\CompatTests\\bin\\Debug\\net48\\results || echo already deleted"
             }
         }
     ],

@@ -43,7 +43,7 @@ public class OverrideTests : TestBase
 //  RH-41841
 //  TODO: create mock assembly
 //  @test "should not fail during overrides if base class is generic" {
-  //  run dotnet ../../bin/Release/net7.0/Compat.dll --quiet files/FSharp.Compiler.Service.dll
+  //  run dotnet ../../bin/Release/net9.0/Compat.dll --quiet files/FSharp.Compiler.Service.dll
   //  echo "$output"
   //  [ "$status" -eq 0 ]
 //  }

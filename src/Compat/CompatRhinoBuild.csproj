@@ -2,7 +2,6 @@
   <Import Project="..\..\..\..\RhinoProjectPropertySheets\Rhino.Common.props" />
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
     <TargetFramework>net7.0</TargetFramework>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
     <UseAppHost>False</UseAppHost>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
@@ -15,11 +14,12 @@
     <UseWindowsForms Condition="$(TargetFramework) == 'net7.0-windows'">true</UseWindowsForms>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and !$(TargetFramework.StartsWith('net4'))">
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-    <RuntimeFrameworkVersion>7.0.0</RuntimeFrameworkVersion>
-    <RollForward>LatestMinor</RollForward>
   </PropertyGroup>
   <PropertyGroup>
+    <RuntimeFrameworkVersion>8.0.0</RuntimeFrameworkVersion>
+    <RollForward>LatestMinor</RollForward>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+
     <IntermediateOutputPath>obj\$(OS)\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>

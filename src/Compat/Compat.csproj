@@ -5,6 +5,7 @@
     <Deterministic>false</Deterministic>
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
     <RuntimeFrameworkVersion>9.0.0</RuntimeFrameworkVersion>
+    <RollForward>Major</RollForward>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     

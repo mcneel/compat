@@ -44,6 +44,8 @@
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
     <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net9.0-macos" />
     <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.Primitives.csproj" />
+    <ProjectReference Include="..\..\..\sysdrawing-coregraphics\sysdrawing-coregraphics.csproj" SetTargetFramework="TargetFramework=net9.0-macos" />
+    <ProjectReference Include="..\..\..\sysdrawing-coregraphics\sysdrawing-primitives.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

@@ -4,20 +4,20 @@
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <Deterministic>false</Deterministic>
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
-    <RuntimeFrameworkVersion>9.0.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>10.0.0</RuntimeFrameworkVersion>
     <RollForward>Major</RollForward>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(windows))">
-    <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>false</SelfContained>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(osx))">
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <PropertyGroup>
@@ -57,12 +57,12 @@
     <PackageReference Include="Mono.Cecil" Version="0.11.6-rhino" />
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
-    <PackageReference Include="System.CodeDom" Version="9.0.0" />
-    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="10.0.2" />
+    <PackageReference Include="System.CodeDom" Version="10.0.2" />
+    <PackageReference Include="System.Diagnostics.EventLog" Version="10.0.2" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.2" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.2" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.2" />
   </ItemGroup>
 </Project>

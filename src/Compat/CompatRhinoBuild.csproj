@@ -1,35 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\..\..\RhinoProjectPropertySheets\Rhino.Common.props" />
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <UseAppHost>False</UseAppHost>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows))">
-    <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <OutputPath>$(RhinoOutputDir)</OutputPath>
-    <OutputPath Condition="$(TargetFramework) == 'net9.0-windows'">$(OutputPath)netcore\</OutputPath>
-    <UseWindowsForms Condition="$(TargetFramework) == 'net9.0-windows'">true</UseWindowsForms>
+    <OutputPath Condition="$(TargetFramework) == 'net10.0-windows'">$(OutputPath)netcore\</OutputPath>
+    <UseWindowsForms Condition="$(TargetFramework) == 'net10.0-windows'">true</UseWindowsForms>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and !$(TargetFramework.StartsWith('net4'))">
   </PropertyGroup>
   <PropertyGroup>
-    <RuntimeFrameworkVersion>9.0.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>$(RhinoRuntimeFrameworkVersion)</RuntimeFrameworkVersion>
     <RollForward>LatestMinor</RollForward>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 
     <IntermediateOutputPath>obj\$(OS)\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>False</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
     <Deterministic>False</Deterministic>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
     <OutputType>Exe</OutputType>
     <RootNamespace>Compat</RootNamespace>
     <AssemblyName>Compat</AssemblyName>
     <SelfContained>False</SelfContained>
+    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System" />
@@ -69,19 +71,19 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Always use netstandard2.0 version of Mono.Cecil, not net40 -->
-    <PackageReference Include="Mono.Cecil" Version="0.11.6-rhino" GeneratePathProperty="true" ExcludeAssets="all" />
+    <PackageReference Include="Mono.Cecil" VersionOverride="0.11.6-rhino" GeneratePathProperty="true" ExcludeAssets="all" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.dll" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Mdb.dll" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Pdb.dll" />
     <Reference Include="$(PkgMono_Cecil)\lib\netstandard2.0\Mono.Cecil.Rocks.dll" />
   </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="System.Security.Permissions" Version="9.0.0" />
-    <PackageReference Include="System.CodeDom" Version="9.0.0" />
-    <PackageReference Include="System.Diagnostics.EventLog" Version="9.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.0" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
+    <PackageReference Include="System.Security.Permissions" />
+    <PackageReference Include="System.CodeDom" />
+    <PackageReference Include="System.Diagnostics.EventLog" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+    <PackageReference Include="System.IO.Ports" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.Net.SDK">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <GenerateDependencyFile>true</GenerateDependencyFile>
     <NoWarn>CS0219</NoWarn>
   </PropertyGroup>

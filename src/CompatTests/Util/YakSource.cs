@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Yak;
 
@@ -10,7 +11,7 @@ namespace CompatTests.Util
   public interface IPackageSource
   {
     string Name { get; }
-    Task<string> Download();
+    Task<string?> Download();
   }
 
   public class YakPackageSource : IPackageSource
@@ -27,7 +28,7 @@ namespace CompatTests.Util
 
     public string Name => _package.Name;
 
-    public async Task<string> Download()
+    public async Task<string?> Download()
     {
       if (!Directory.Exists(_yak.PackageFolder))
         Directory.CreateDirectory(_yak.PackageFolder);

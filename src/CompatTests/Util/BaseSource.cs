@@ -37,7 +37,20 @@ namespace CompatTests.Util
     {
       // already downloaded packages? cool, let's not do it again.
       if (Directory.Exists(OutputPath) && Directory.EnumerateFiles(OutputPath, "*.*", SearchOption.AllDirectories).Any())
-        return DirectorySource.Get(OutputPath, false);
+      {
+        List<IPackageSource> dirs = new List<IPackageSource>();
+        foreach (var dir in Directory.EnumerateDirectories(OutputPath).OrderBy(r => Path.GetFileName(r)))
+        {
+          var name = Path.GetFileName(dir);
+          foreach (var subdir in Directory.EnumerateDirectories(dir).OrderBy(r => Path.GetFileName(r)))
+          {
+            var subname = Path.GetFileName(subdir);
+            dirs.Add(new DirectoryPackageSource(name, subdir));
+          }
+        }
+        return dirs;
+      }
+        
 
       if (UseRemoteSource)
       {

@@ -39,9 +39,42 @@ namespace CompatTests
     }
 
     [Test]
+    public void GenerateRhinoNetFrameworkAssemblyList()
+    {
+      // find the src4 directory
+      var dir = AppContext.BaseDirectory;
+      while (dir != null && Path.GetFileName(dir) != "src4")
+      {
+        dir = Path.GetDirectoryName(dir);
+      }
+
+      dir = Path.Combine(dir, "bin", "Debug");
+      foreach (var fileName in Directory.GetFiles(dir, "*.dll").OrderBy(Path.GetFileName))
+      {
+        try
+        {
+          var name = Path.GetFileNameWithoutExtension(fileName);
+          var assemblyName = AssemblyName.GetAssemblyName(fileName);
+          var tokenName = Program.GetPublicKeyTokenName(assemblyName.GetPublicKeyToken());
+          if (tokenName == null)
+            continue;
+
+          // ignore these
+          // if (name == "Compat" || name == "dotnetstart" || name == "RhinoCommon")
+          //   continue;
+
+          Console.WriteLine($"    (\"{name}\", \"{tokenName}\"),");
+        }
+        catch
+        {
+          // not a .NET assembly, ignore
+        }
+      }
+    }
+
+    [Test]
     public void GenerateRhinoNetCoreAssemblyList()
     {
-      // only add .NET Core assemblies
 
       // find the src4 directory
       var dir = AppContext.BaseDirectory;
@@ -69,8 +102,8 @@ namespace CompatTests
             continue;
 
           // ignore these
-          if (name == "Compat" || name == "dotnetstart" || name == "RhinoCommon")
-            continue;
+          // if (name == "Compat" || name == "dotnetstart" || name == "RhinoCommon")
+          //   continue;
 
           Console.WriteLine($"    (\"{name}\", \"{tokenName}\"),");
         }

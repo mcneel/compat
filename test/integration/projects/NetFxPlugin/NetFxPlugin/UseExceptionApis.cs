@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +34,15 @@ namespace TestPlugin
       AppDomain.CurrentDomain.ExecuteAssembly("myAssemblyFile");
       AppDomain.CurrentDomain.ExecuteAssembly("myAssemblyFile", new string[] { "woo" });
       AppDomain.CurrentDomain.ExecuteAssembly("myAssemblyFile", new string[] { "woo" }, null, System.Configuration.Assemblies.AssemblyHashAlgorithm.None);
+
+      // BinaryFormatter - only flagged with --check-net10; disabled in .NET 9+ unless the host opts in
+      var formatter = new BinaryFormatter();
+      using (var stream = new MemoryStream())
+      {
+        formatter.Serialize(stream, str);
+        stream.Position = 0;
+        var roundtrip = formatter.Deserialize(stream);
+      }
     }
   }
 }

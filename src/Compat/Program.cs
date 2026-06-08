@@ -27,11 +27,12 @@ namespace Compat
 
     static bool quiet = false;
     static bool checkAccess = false;
+    static bool checkNet10 = false;
     static IDictionary<string, AssemblyDefinition> cache;
 
     static void Usage(string message)
     {
-      Console.WriteLine("compat/{0}\nUsage: Compat [-q | --quiet | --debug] [--treat-pinvoke-as-error] [--check-access] [--check-system-assemblies] <assembly> <reference>...", version);
+      Console.WriteLine("compat/{0}\nUsage: Compat [-q | --quiet | --debug] [--treat-pinvoke-as-error] [--check-access] [--check-net10] [--check-system-assemblies] <assembly> <reference>...", version);
       if (message != null) logger.Warning(message);
     }
 
@@ -49,7 +50,8 @@ namespace Compat
       quiet = false;
       logger.Level = Logger.LogLevel.INFO;
       checkAccess = false;
-      
+      checkNet10 = false;
+
       if (args[0] == "--quiet" || args[0] == "-q")
       {
         quiet = true;
@@ -81,6 +83,13 @@ namespace Compat
       if (args[0] == "--check-access")
       {
         checkAccess = true;
+        args = args.Skip(1).ToArray();
+      }
+
+      // should we check for APIs that require opt-in to work on .NET 10 (e.g. BinaryFormatter)?
+      if (args[0] == "--check-net10")
+      {
+        checkNet10 = true;
         args = args.Skip(1).ToArray();
       }
 
@@ -137,18 +146,26 @@ namespace Compat
 
       var token = assemblyName.GetPublicKeyToken();
       bool isIgnoreAssembly = false;
-      if (token != null)
+      var tokenName = GetPublicKeyTokenName(token);
+
+      if (NetCore.SkipAssemblies.Contains((assemblyName.Name, tokenName)))
       {
-        var tokenName = GetPublicKeyTokenName(token);
-        if (NetCore.IgnorePublicKeys.Contains(tokenName))
-          isIgnoreAssembly = true;
-
-        if (NetCore.IgnoreAssemblies.Contains((assemblyName.Name, tokenName)))
-          isIgnoreAssembly = true;
-
-        if (NetCore.RunningInNetCore && NetCore.IgnoreNetCoreAssemblies.Contains((assemblyName.Name, tokenName)))
-          isIgnoreAssembly = true;
+        logger.Warning("{0} is on the list of assemblies to skip, so we won't check it for compatibility.", fileName);
+        return 0;
       }
+      
+      if (tokenName != null && NetCore.IgnorePublicKeys.Contains(tokenName))
+        isIgnoreAssembly = true;
+
+      if (NetCore.IgnoreAssemblies.Contains((assemblyName.Name, tokenName)))
+        isIgnoreAssembly = true;
+
+      if (NetCore.RunningInNetCore && NetCore.IgnoreNetCoreAssemblies.Contains((assemblyName.Name, tokenName)))
+        isIgnoreAssembly = true;
+
+      // ignore even when running in netcore
+      if (NetCore.IgnoreNetFrameworkAssemblies.Contains((assemblyName.Name, tokenName)))
+        isIgnoreAssembly = true;
 
       // load module and assembly resolver
       ModuleDefinition module;
@@ -325,6 +342,29 @@ namespace Compat
                   continue;
                 }
 
+                // optionally check for APIs that resolve fine but require the host to opt-in to work
+                // on .NET 10 (e.g. BinaryFormatter, which throws unless the host enables the
+                // System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization AppContext
+                // switch and references the System.Runtime.Serialization.Formatters NuGet package).
+                // These work when running Rhino normally but fail under Rhino.Inside.
+                if (checkNet10)
+                {
+                  var declaringType = GetOperandDeclaringTypeFullName(instruction.Operand);
+                  if (declaringType != null && NetCore.Net10ExceptionTypes.TryGetValue(declaringType, out var net10) && net10.status != ResolutionStatus.Success)
+                  {
+                    var net10Status = net10.status;
+                    Pretty.Instruction(net10Status, scope.Name, instructionString);
+                    logger.Info("      {0}", net10.reason);
+
+                    if (isIgnoreAssembly && net10Status == ResolutionStatus.Failure)
+                      net10Status = ResolutionStatus.Warning;
+
+                    failure |= net10Status == ResolutionStatus.Failure;
+                    warning |= net10Status == ResolutionStatus.Warning;
+                    continue;
+                  }
+                }
+
                 // skip if scope is not in the list of cached reference assemblies
                 if (!cache.ContainsKey(scope.Name))
                 {
@@ -381,6 +421,8 @@ namespace Compat
 
     internal static string GetPublicKeyTokenName(byte[] token)
     {
+      if (token == null || token.Length == 0)
+        return null;
       return token?.Aggregate(string.Empty, (s, b) => s += b.ToString("x2", CultureInfo.InvariantCulture));
     }
 
@@ -446,6 +488,29 @@ namespace Compat
       }
 
       return scope;
+    }
+
+    /// <summary>
+    /// Gets the full name of the type that declares the operand, if the operand is
+    /// a field, a method or a type reference.
+    /// </summary>
+    /// <param name="operand">The operand in question.</param>
+    /// <returns>The declaring type's full name, otherwise null.</returns>
+    static string GetOperandDeclaringTypeFullName(object operand)
+    {
+      var mref = operand as MethodReference;
+      if (mref != null)
+        return mref.DeclaringType?.FullName;
+
+      var fref = operand as FieldReference;
+      if (fref != null)
+        return fref.DeclaringType?.FullName;
+
+      var tref = operand as TypeReference;
+      if (tref != null)
+        return tref.FullName;
+
+      return null;
     }
 
     /// <summary>

@@ -9,8 +9,8 @@ public class OverrideTests : TestBase
 
     Assert.That(result.ExitCode, Is.EqualTo(0), "should exit with 0 if all abstract methods of the base class are implemented in the derived class");
     
-    Assert.IsTrue(result.Output.Contains("Overrides (Rhino.PlugIns.RenderPlugIn)"));
-    Assert.IsTrue(result.Output.Contains("✓ PASS Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,Rhino.PlugIns.RenderPlugIn/RenderOptions) < RhinoCommon"));
+    Assert.That(result.Output, Does.Contain("Overrides (Rhino.PlugIns.RenderPlugIn)"));
+    Assert.That(result.Output, Does.Contain("✓ PASS Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,Rhino.PlugIns.RenderPlugIn/RenderOptions) < RhinoCommon"));
   }
 
   [Test]
@@ -19,7 +19,7 @@ public class OverrideTests : TestBase
     var result = RunCompatCheck(GetTestProject("rdktest"), new [] { GetRhinoCommon("rhino_en-us_6.0.16231.01091") });
 
     Assert.That(result.ExitCode, Is.EqualTo(112), "should fail if the signatures of overridden abstract methods have changed");
-    Assert.IsTrue(result.Output.Contains("✗ FAIL Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,System.Boolean) < RhinoCommon"));
+    Assert.That(result.Output, Does.Contain("✗ FAIL Rhino.Commands.Result Rhino.PlugIns.RenderPlugIn::Render(Rhino.RhinoDoc,Rhino.Commands.RunMode,System.Boolean) < RhinoCommon"));
   }
   
 

@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <YakPackagesDir>$(MSBuildThisFileDirectory)packages\</YakPackagesDir>
+    <YakStageDir>$(MSBuildThisFileDirectory)obj\yak\$(MSBuildProjectName)\</YakStageDir>
+    <YakPackageName>rh95428-$(MSBuildProjectName.ToLowerInvariant())</YakPackageName>
+  </PropertyGroup>
+
+  <!-- Packages each plug-in so the packages folder can be added as a Package Manager source. -->
+  <Target Name="YakPackage" AfterTargets="Build" Condition="'$(TargetExt)' == '.rhp' Or '$(TargetExt)' == '.gha'">
+    <RemoveDir Directories="$(YakStageDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(YakStageDir)" />
+    <WriteLinesToFile File="$(YakStageDir)manifest.yml" Overwrite="true"
+                      Lines="name: $(YakPackageName);version: 1.0.0;authors:;- McNeel;description: RH-95428 compatibility test ($(MSBuildProjectName))" />
+    <MakeDir Directories="$(YakPackagesDir)" />
+    <!-- a .yak is just a zip; tag it rh9 so Rhino 9 offers it -->
+    <ZipDirectory SourceDirectory="$(YakStageDir)" DestinationFile="$(YakPackagesDir)$(YakPackageName)-1.0.0-rh9_0-any.yak" Overwrite="true" />
+  </Target>
+</Project>

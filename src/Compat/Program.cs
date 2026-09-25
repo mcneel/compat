@@ -30,6 +30,22 @@ namespace Compat
     static bool checkNet10 = false;
     static IDictionary<string, AssemblyDefinition> cache;
 
+    // Why the check failed, printed as "Reason: <key>" lines so Rhino can explain it to the user.
+    public const string REASON_RHINO_API = "rhino-api";
+    public const string REASON_DOTNET_FRAMEWORK = "dotnet-framework";
+    public const string REASON_NET10_OPTIN = "net10-optin";
+    public const string REASON_CPP_SDK = "cpp-sdk";
+    public const string REASON_OTHER = "other";
+    static HashSet<string> reasons = new HashSet<string>();
+
+    // Grasshopper is signed with its own key, but is still part of Rhino's API.
+    const string GrasshopperPublicKey = "dda4f5ec2cd80803";
+
+    // Public key tokens of .NET's own assemblies, so failures against them are reported as .NET differences.
+    static readonly HashSet<string> MicrosoftPublicKeys = new HashSet<string> {
+      "b77a5c561934e089", "b03f5f7f11d50a3a", "31bf3856ad364e35", "cc7b13ffcd2ddd51", "7cec85d7bea7798e", "adb9793829ddae60"
+    };
+
     static void Usage(string message)
     {
       Console.WriteLine("compat/{0}\nUsage: Compat [-q | --quiet | --debug] [--treat-pinvoke-as-error] [--check-access] [--check-net10] [--check-system-assemblies] <assembly> <reference>...", version);
@@ -51,6 +67,7 @@ namespace Compat
       logger.Level = Logger.LogLevel.INFO;
       checkAccess = false;
       checkNet10 = false;
+      reasons = new HashSet<string>();
 
       if (args[0] == "--quiet" || args[0] == "-q")
       {
@@ -286,6 +303,7 @@ namespace Compat
                 // fail!
                 Pretty.WriteStatus(ResolutionStatus.Failure, $"{type.FullName} is using an obsolete C++ SDK");
                 failure = true;
+                reasons.Add(REASON_CPP_SDK);
               }
             }
           }
@@ -337,6 +355,8 @@ namespace Compat
                   if (isIgnoreAssembly && status == ResolutionStatus.Failure)
                     status = ResolutionStatus.Warning;
 
+                  if (status == ResolutionStatus.Failure)
+                    reasons.Add(REASON_DOTNET_FRAMEWORK);
                   failure |= status == ResolutionStatus.Failure;
                   warning |= status == ResolutionStatus.Warning;
                   continue;
@@ -359,6 +379,8 @@ namespace Compat
                     if (isIgnoreAssembly && net10Status == ResolutionStatus.Failure)
                       net10Status = ResolutionStatus.Warning;
 
+                    if (net10Status == ResolutionStatus.Failure)
+                      reasons.Add(REASON_NET10_OPTIN);
                     failure |= net10Status == ResolutionStatus.Failure;
                     warning |= net10Status == ResolutionStatus.Warning;
                     continue;
@@ -392,6 +414,7 @@ namespace Compat
                 {
                   Pretty.Instruction(ResolutionStatus.Failure, scope.Name, instructionString);
                   failure = true; // set global failure (non-zero exit code)
+                  reasons.Add(ReasonForScope(scope.Name));
                 }
               }
             }
@@ -410,13 +433,32 @@ namespace Compat
 
       // exit code
       if (failure)
+      {
+        foreach (var reason in reasons)
+          Console.WriteLine("Reason: {0}", reason);
         return ERROR_COMPAT;
+      }
       if (pinvoke && treatPInvokeAsError)
         return ERROR_PINVOKE;
       if (warning)
         return ERROR_WARNING;
 
       return 0; // a-ok
+    }
+
+    /// <summary>
+    /// Gets the failure reason for a member that can't be resolved in the named reference assembly.
+    /// </summary>
+    static string ReasonForScope(string scopeName)
+    {
+      if (!cache.TryGetValue(scopeName, out var assembly))
+        return REASON_OTHER;
+      var token = GetPublicKeyTokenName(assembly.Name.PublicKeyToken);
+      if (token == RhinoPublicKey || token == GrasshopperPublicKey)
+        return REASON_RHINO_API;
+      if (token != null && MicrosoftPublicKeys.Contains(token))
+        return REASON_DOTNET_FRAMEWORK;
+      return REASON_OTHER;
     }
 
     internal static string GetPublicKeyTokenName(byte[] token)
@@ -703,6 +745,7 @@ namespace Compat
             else
             {
               failure = true;
+              reasons.Add(ReasonForScope(scope.Name));
               Pretty.Instruction(ResolutionStatus.Failure, scope.Name, method.FullName);
             }
           }

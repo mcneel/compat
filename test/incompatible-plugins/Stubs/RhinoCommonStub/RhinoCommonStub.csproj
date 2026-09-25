@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Stand-in for a Rhino 8 RhinoCommon that has a method Rhino 9 doesn't. -->
+  <PropertyGroup>
+    <AssemblyName>RhinoCommon</AssemblyName>
+    <OutputPath>$(StubsDir)RhinoCommon\</OutputPath>
+  </PropertyGroup>
+</Project>

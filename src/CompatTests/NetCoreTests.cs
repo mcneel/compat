@@ -18,6 +18,8 @@ public class NetCoreTests : TestBase
       var status = $"{GetStatusText(entry.status)} {entry.api} < {entry.assembly}";
       Assert.That(result.Output.Contains(status), $"Could not find API '{entry.api}' in the plugin");
     }
+
+    Assert.That(result.Output, Does.Contain($"Reason: {Compat.Program.REASON_DOTNET_FRAMEWORK}"));
   }
 
   [Test]
@@ -35,6 +37,8 @@ public class NetCoreTests : TestBase
       Assert.That(result.Output.Contains($"{GetStatusText(Compat.Program.ResolutionStatus.Failure)} ") && result.Output.Contains(type),
         $"Expected '{type}' to be flagged as a failure with --check-net10");
     }
+
+    Assert.That(result.Output, Does.Contain($"Reason: {Compat.Program.REASON_NET10_OPTIN}"));
   }
 
   [Test]

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Stubs/">
+    <Project Path="Stubs/GrasshopperStub/GrasshopperStub.csproj" />
+    <Project Path="Stubs/RhinoCommonStub/RhinoCommonStub.csproj" />
+  </Folder>
+  <Project Path="BinaryFormatterPlugin/BinaryFormatterPlugin.csproj" />
+  <Project Path="CompatibleComponents/CompatibleComponents.csproj" />
+  <Project Path="CompatiblePlugin/CompatiblePlugin.csproj" />
+  <Project Path="NetFrameworkComponents/NetFrameworkComponents.csproj" />
+  <Project Path="NetFrameworkPlugin/NetFrameworkPlugin.csproj" />
+  <Project Path="RhinoApiComponents/RhinoApiComponents.csproj" />
+  <Project Path="RhinoApiPlugin/RhinoApiPlugin.csproj" />
+</Solution>

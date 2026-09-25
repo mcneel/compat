@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetExt>.rhp</TargetExt>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stubs\RhinoCommonStub\RhinoCommonStub.csproj" Private="false" />
+  </ItemGroup>
+</Project>

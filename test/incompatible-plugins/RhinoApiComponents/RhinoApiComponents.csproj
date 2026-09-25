@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetExt>.gha</TargetExt>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stubs\GrasshopperStub\GrasshopperStub.csproj" Private="false" />
+  </ItemGroup>
+</Project>

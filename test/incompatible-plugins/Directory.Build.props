@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Rhino8Version Condition="'$(Rhino8Version)' == ''">8.35.26251.13001</Rhino8Version>
+    <!-- each plug-in gets its own folder, so Rhino doesn't also check the others' files -->
+    <OutputPath>$(MSBuildThisFileDirectory)out\$(MSBuildProjectName)\</OutputPath>
+    <StubsDir>$(MSBuildThisFileDirectory)obj\stubs\</StubsDir>
+  </PropertyGroup>
+</Project>

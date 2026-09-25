@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Stand-in for a Rhino 8 Grasshopper that has a method Rhino 9 doesn't. -->
+  <PropertyGroup>
+    <AssemblyName>Grasshopper</AssemblyName>
+    <OutputPath>$(StubsDir)Grasshopper\</OutputPath>
+  </PropertyGroup>
+</Project>

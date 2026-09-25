@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetExt>.gha</TargetExt>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Grasshopper" Version="$(Rhino8Version)" ExcludeAssets="runtime" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+</Project>

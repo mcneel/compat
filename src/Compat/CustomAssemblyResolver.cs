@@ -1,6 +1,8 @@
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Compat
 {
@@ -21,9 +23,17 @@ namespace Compat
       public CustomAssemblyResolver(IEnumerable<string> paths)
       {
         cache = new Dictionary<string, AssemblyDefinition>(StringComparer.Ordinal);
+
+        var referenceResolver = new ReferenceAssemblyResolver();
+        var readerParameters = new ReaderParameters { AssemblyResolver = referenceResolver };
+
         foreach (string path in paths)
         {
-          var assembly = AssemblyDefinition.ReadAssembly(path);
+          var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+          if (!referenceResolver.GetSearchDirectories().Contains(directory, StringComparer.OrdinalIgnoreCase))
+            referenceResolver.AddSearchDirectory(directory);
+
+          var assembly = AssemblyDefinition.ReadAssembly(path, readerParameters);
           this.RegisterAssembly(assembly);
         }
       }
@@ -66,6 +76,38 @@ namespace Compat
       public IDictionary<string, AssemblyDefinition> Cache
       {
         get { return new Dictionary<string, AssemblyDefinition>(cache); }
+      }
+    }
+
+    /// <summary>
+    /// Resolves the dependencies of the reference assemblies, searching the working directory last.
+    /// </summary>
+    class ReferenceAssemblyResolver : DefaultAssemblyResolver
+    {
+      static readonly string[] s_workingDirectories = { ".", "bin" };
+
+      public ReferenceAssemblyResolver()
+      {
+        // The working directory may hold .NET Framework facades that forward types back into the
+        // .NET Core assemblies, making Cecil fail with a circularity (e.g. System.Diagnostics.EventLog),
+        // so the reference folders and the runtime must win over it.
+        foreach (var directory in s_workingDirectories)
+          RemoveSearchDirectory(directory);
+      }
+
+      public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+      {
+        try
+        {
+          return base.Resolve(name, parameters);
+        }
+        catch (AssemblyResolutionException)
+        {
+          var assembly = SearchDirectory(name, s_workingDirectories, parameters);
+          if (assembly != null)
+            return assembly;
+          throw;
+        }
       }
     }
   }

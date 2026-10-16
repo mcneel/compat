@@ -16,7 +16,7 @@
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform(Windows)) and !$(TargetFramework.StartsWith('net4'))">
   </PropertyGroup>
   <PropertyGroup>
-    <RuntimeFrameworkVersion>8.0.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>10.0.0</RuntimeFrameworkVersion>
     <RollForward>LatestMinor</RollForward>
     <EnableDynamicLoading>true</EnableDynamicLoading>
 

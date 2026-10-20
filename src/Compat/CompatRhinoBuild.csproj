@@ -42,7 +42,8 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform(OSX))">
-    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0" />
+    <!-- net7.0 build is a reference assembly; don't let it overwrite the shipped net9.0-macos one in the output folder -->
+    <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.csproj" SetTargetFramework="TargetFramework=net7.0" Private="False" />
     <ProjectReference Include="..\..\..\MonoMac.Windows.Form\MonoMac.Windows.Forms\System.Windows.Forms.Primitives.csproj" />
   </ItemGroup>
   <ItemGroup>

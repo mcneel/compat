@@ -29,7 +29,7 @@ namespace CompatTests
           var name = Path.GetFileNameWithoutExtension(fileName);
           var assemblyName = AssemblyName.GetAssemblyName(fileName);
           var tokenName = Program.GetPublicKeyTokenName(assemblyName.GetPublicKeyToken());
-          Console.WriteLine($"    (\"{name}\", \"{tokenName}\"),");
+          Console.WriteLine($"        (\"{name}\", \"{tokenName}\"),");
         }
         catch
         {
@@ -63,7 +63,7 @@ namespace CompatTests
           // if (name == "Compat" || name == "dotnetstart" || name == "RhinoCommon")
           //   continue;
 
-          Console.WriteLine($"    (\"{name}\", \"{tokenName}\"),");
+          Console.WriteLine($"        (\"{name}\", \"{tokenName}\"),");
         }
         catch
         {
@@ -105,7 +105,7 @@ namespace CompatTests
           // if (name == "Compat" || name == "dotnetstart" || name == "RhinoCommon")
           //   continue;
 
-          Console.WriteLine($"    (\"{name}\", \"{tokenName}\"),");
+          Console.WriteLine($"        (\"{name}\", \"{tokenName}\"),");
         }
         catch
         {

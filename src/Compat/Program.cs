@@ -119,12 +119,7 @@ namespace Compat
           Assembly.Load(new AssemblyName("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
           Assembly.Load(new AssemblyName("System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
           Assembly.Load(new AssemblyName("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")).Location,
-#if NETFRAMEWORK || WINDOWS
           typeof(System.Windows.Forms.Appearance).Assembly.Location
-#else
-          // Rhino ships System.Windows.Forms next to Compat; it isn't in our deps so it can't be loaded by type
-          Path.Combine(AppContext.BaseDirectory, "System.Windows.Forms.dll")
-#endif
         };
 
         args = args.Concat(systemAssemblies).ToArray();
